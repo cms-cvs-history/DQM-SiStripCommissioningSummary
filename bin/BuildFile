@@ -5,6 +5,7 @@
 <use name=DQM/SiStripCommissioningSummary>
 <use name=root>
 <library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
+</environment>
 
 <use name=boost>
 <lib name=binDQMSiStripCommissioningSummary>
@@ -13,5 +14,6 @@
 <use name=boost>
 <lib name=binDQMSiStripCommissioningSummary>
 <bin name=SiStripCommissioningTBMonitorToClient file=SiStripCommissioningTBMonitorToClient.cpp></bin>
-</environment>
+
+
 
