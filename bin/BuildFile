@@ -1,0 +1,17 @@
+<environment>
+<use name=DQM/SiStripCommissioningAnalysis>
+<use name=DQM/SiStripCommon>
+<use name=DataFormats/SiStripDetId>
+<use name=DQM/SiStripCommissioningSummary>
+<use name=root>
+<library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
+
+<use name=boost>
+<lib name=binDQMSiStripCommissioningSummary>
+<bin name=SiStripOfflineCommissioningClient file=SiStripOfflineCommissioningClient.cpp></bin>
+
+<use name=boost>
+<lib name=binDQMSiStripCommissioningSummary>
+<bin name=SiStripCommissioningTBMonitorToClient file=SiStripCommissioningTBMonitorToClient.cpp></bin>
+</environment>
+
