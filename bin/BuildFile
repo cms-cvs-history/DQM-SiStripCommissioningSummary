@@ -4,16 +4,13 @@
 <use name=DataFormats/SiStripDetId>
 <use name=DQM/SiStripCommissioningSummary>
 <use name=root>
-<library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
-
 <use name=boost>
+
+<library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
 
 <bin name=SiStripOfflineCommissioningClient file=SiStripOfflineCommissioningClient.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
-
-
-<use name=boost>
 
 <bin name=SiStripCommissioningTBMonitorToClient file=SiStripCommissioningTBMonitorToClient.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
