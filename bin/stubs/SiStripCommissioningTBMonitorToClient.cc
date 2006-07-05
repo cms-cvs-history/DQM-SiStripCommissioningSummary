@@ -64,24 +64,20 @@ bool SiStripCommissioningTBMonitorToClient::convert() {
   //Loop all commissioning tprofiles. Fill map, indexing with CCU Address fec-key. Update client file directory structure.
   
   for (map< string, vector<TProfile*> >::iterator ihistset = profile_map.begin(); ihistset != profile_map.end(); ihistset++) {
-
  for (vector<TProfile*>::iterator ihist = ihistset->second.begin(); ihist != ihistset->second.end(); ihist++) {
 
     //look for "task id" in the histo title (quick check)
     const string name((*ihist)->GetName());
     
     if (name.find(taskId_) != std::string::npos) {
-      
+
       //extract histogram details from encoded histogram name.
       SiStripHistoNamingScheme::HistoTitle h_title = histoTitle(name);
-      
       //update the profile name to the "standard format"
-      string newName = SiStripHistoNamingScheme::histoTitle(h_title.task_,h_title.contents_,h_title.keyType_,h_title.keyValue_,h_title.granularity_,h_title.channel_, h_title.extraInfo_);
-      const_cast<TProfile*>(*ihist)->SetName(newName.c_str());
-      
+      string newName = SiStripHistoNamingScheme::histoTitle(h_title.task_,h_title.contents_,h_title.keyType_,h_title.keyValue_,h_title.granularity_,h_title.channel_,h_title.extraInfo_);
+      (*ihist)->SetName(newName.c_str());
       //add relevent directory for device if required
       client_->addDevice(h_title.keyValue_);
-      
       //update map with reformatted profile using histo key (indicating control path) as the index
       commissioning_map[h_title.keyValue_].reserve(6);
       commissioning_map[h_title.keyValue_].push_back(**ihist);
@@ -100,7 +96,7 @@ bool SiStripCommissioningTBMonitorToClient::convert() {
     SiStripControlKey::ControlPath c_path = SiStripControlKey::path(ihistset->first);
     string path = SiStripHistoNamingScheme::controlPath(c_path.fecCrate_, c_path.fecSlot_, c_path.fecRing_, c_path.ccuAddr_, c_path.ccuChan_);
     TDirectory* ccuChan = client_->dqmTop()->GetDirectory(path.c_str());
-
+ 
      if ((task_ == sistrip::PEDESTALS) && (ihistset->second.size() == 2)) {
      
        for (unsigned short ihisto = 0; ihisto < 2; ihisto++) {
@@ -133,7 +129,6 @@ bool SiStripCommissioningTBMonitorToClient::convert() {
      ccuChan->WriteTObject(&ihistset->second[iprof]);
  }
 }
-
   return true;
 }
 
@@ -247,7 +242,7 @@ SiStripHistoNamingScheme::HistoTitle SiStripCommissioningTBMonitorToClient::hist
   else {cout << "[SiStripCommissioningTBMonitorToClient::histoTitle]: Unknown Commissioning task. Setting SiStripHistoNamingScheme::HistoName::granularity_ to \"UNKNOWN GRANULARITY\".";}
 
   // Set SiStripHistoNamingScheme::HistoTitle::keyValue_
-  
+
   stringstream os(""); 
   if (stop != std::string::npos) {
     os << histo_name.substr(start+2,(stop-start-2));}
@@ -255,7 +250,15 @@ SiStripHistoNamingScheme::HistoTitle SiStripCommissioningTBMonitorToClient::hist
   
   unsigned int idlocal;
   os >> hex >> idlocal;
-  title.keyValue_ = (idlocal<<2) | (title.channel_ & 0x3);//updates key to the format defined in DataFormats/SiStripDetId/interface/SiStripControlKey.h
+
+  SiStripControlKey::ControlPath path;
+  path.channel_ = title.channel_ & 0x3;
+  path.ccuChan_ =  idlocal & 0xFF;
+  path.ccuAddr_ = (idlocal >> 8) & 0xFF;
+  path.fecRing_ = (idlocal >> 16) & 0xF;
+  path.fecSlot_ = (idlocal >> 20) & 0xF;
+  path.fecCrate_  = 0;
+  title.keyValue_ = SiStripControlKey::key(path.fecCrate_,path.fecSlot_,path.fecRing_,path.ccuAddr_,path.ccuChan_,path.channel_);//updates key to the format defined in DataFormats/SiStripDetId/interface/SiStripControlKey.h
 
   return title;
 }

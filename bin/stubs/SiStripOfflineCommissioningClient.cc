@@ -40,6 +40,7 @@ SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient(string clie
 
  //Check Commissioning Task and Readout View
   if (task_ == sistrip::UNKNOWN_TASK) cout << "[SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient]: Unknown commissioning task. Value used: " << task_ << "; values accepted: Pedestals, ApvTiming, FedTiming, OptoScan, VpspScan, ApvLatency." << endl;
+
   if (view_ == sistrip::UNKNOWN_VIEW) cout << "[SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient]: Unknown readout view. Value used: " << view_ << "; values accepted: ControlView." << endl;
 
   if (!client_->queryDQMFormat()) cout << "[SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient]: Error when reading file: " << client_path_ << ". Not interpretted as \"DQM\" format." << endl;
@@ -48,7 +49,6 @@ SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient(string clie
   commissioning_map_ = new map< unsigned int,vector<const TProfile*> >();
 
   setRunInfo();
-
   prepareSummary();
 }
 
@@ -88,9 +88,6 @@ void SiStripOfflineCommissioningClient::analysis() {
       //find control path from map key
       SiStripControlKey::ControlPath path = SiStripControlKey::path(ihistomap->first);
       
-      //get module information for the summary
-      CommissioningSummary::ReadoutId readout(ihistomap->first, h_title.channel_);
-      
       //commissioning analysis
       
       if (task_ == sistrip::APV_TIMING) {
@@ -102,49 +99,49 @@ void SiStripOfflineCommissioningClient::analysis() {
 	vector<unsigned short> c_monitorables;
 	anal.analysis(c_histos, c_monitorables);
 	unsigned int val = c_monitorables[0] * 24 + c_monitorables[1];
-	c_summary_->update(readout, val); 
+	c_summary_->update(ihistomap->first, val); 
       }
       
       else if (task_ == sistrip::PEDESTALS) {
-
+	
 	//fill map with module histograms using key
 	if (histo_organizer.find(h_title.channel_) == histo_organizer.end()) {
 	  histo_organizer[h_title.channel_] = vector< vector<TProfile*> >(1, vector<TProfile*>(2,(TProfile*)(0)));}
-
+	
 	if (h_title.extraInfo_.find(sistrip::pedsAndRawNoise_) != string::npos) {histo_organizer[h_title.channel_][0][0] = const_cast<TProfile*>(*prof);}
 	else if (h_title.extraInfo_.find(sistrip::residualsAndNoise_)  != string::npos) {histo_organizer[h_title.channel_][0][1] = const_cast<TProfile*>(*prof);}
-
+	
 	//if last histo in vector (i.e. for module) perform analysis and add to summary....
 	if (prof == (ihistomap->second.end() - 1)) {
-
+	  
 	  //define analysis object
-	PedestalsAnalysis anal;
-
-	//loop over lld channels
-	for (map< unsigned int, vector< vector< TProfile* > > >::iterator it = histo_organizer.begin(); it != histo_organizer.end(); it++) {
-	vector<const TProfile*> c_histos;
-	c_histos.push_back(it->second[0][0]); c_histos.push_back(it->second[0][1]);
-	vector< vector<float> > c_monitorables;
-	anal.analysis(c_histos, c_monitorables);
-       
-	//ped == average pedestals, noise == average noise
-	float ped = 0, noise = 0;
-	
-	if (c_monitorables[0].size() == c_monitorables[1].size() != 0) {
-	  for (unsigned short istrip = 0; istrip < c_monitorables[0].size(); istrip++) {
-	    ped += c_monitorables[0][istrip];
-	    noise += c_monitorables[1][istrip];
+	  PedestalsAnalysis anal;
+	  
+	  //loop over histograms
+	  for (map< unsigned int, vector< vector< TProfile* > > >::iterator it = histo_organizer.begin(); it != histo_organizer.end(); it++) {
+	    
+	    vector<const TProfile*> c_histos; 
+	    c_histos.push_back(it->second[0][0]); c_histos.push_back(it->second[0][1]);
+	    vector< vector<float> > c_monitorables;
+	    anal.analysis(c_histos, c_monitorables);
+	    
+	    //ped == average pedestals, noise == average noise
+	    float ped = 0, noise = 0;
+	    
+	    if (c_monitorables[0].size() == c_monitorables[1].size() != 0) {
+	      for (unsigned short istrip = 0; istrip < c_monitorables[0].size(); istrip++) {
+		ped += c_monitorables[0][istrip];
+		noise += c_monitorables[1][istrip];
+	      }
+	      ped = ped/c_monitorables[0].size();
+	      noise = noise/c_monitorables[0].size();
+	    }
+	    
+	    //update summary
+	    c_summary_->update(ihistomap->first, ped); 
+	    c_summary2_->update(ihistomap->first, noise);
 	  }
-	  ped = ped/c_monitorables[0].size();
-	  noise = noise/c_monitorables[0].size();
-	}
-	
-	//update summary
-	CommissioningSummary::ReadoutId readout(ihistomap->first, it->first);
-	c_summary_->update(readout, ped); 
-	c_summary2_->update(readout, noise);
-	}
-	histo_organizer.clear();//refresh the container
+	  histo_organizer.clear();//refresh the container
 	}
       }
       
@@ -157,7 +154,7 @@ void SiStripOfflineCommissioningClient::analysis() {
 	vector<unsigned short> c_monitorables;
 	anal.analysis(c_histos, c_monitorables);
 	unsigned int val = c_monitorables[0];
-	c_summary_->update(readout, val); 
+	c_summary_->update(ihistomap->first, val); 
 	
       }
       
@@ -170,7 +167,7 @@ void SiStripOfflineCommissioningClient::analysis() {
 	vector<unsigned short> c_monitorables;
 	anal.analysis(c_histos, c_monitorables);
 	unsigned int val = c_monitorables[0] * 25 + c_monitorables[1];
-	c_summary_->update(readout, val); 
+	c_summary_->update(ihistomap->first, val); 
 	
       }
       
@@ -193,7 +190,7 @@ void SiStripOfflineCommissioningClient::analysis() {
 	if (digital == 1) {
 	  histo_organizer[h_title.channel_][gain][1] = const_cast<TProfile*>(*prof);}
 	
-	//if last histo in vector (i.e. for module) perform analysis....
+	//if last histo in vector (i.e. for channel) perform analysis....
 	if (prof == (ihistomap->second.end() - 1)) {
 	  
 	  OptoScanAnalysis anal;
@@ -216,10 +213,9 @@ void SiStripOfflineCommissioningClient::analysis() {
 		if ((fabs(temp_monitorables[0] - targetGain_) < fabs(c_monitorables[0] - targetGain_)) || ((it == histo_organizer.begin()) && igain == 0)) {c_monitorables = temp_monitorables;}
 	      }
 	    }
-	    
-	    CommissioningSummary::ReadoutId readout(ihistomap->first, it->first);
-	    c_summary_->update(readout, c_monitorables[1]);
-	    c_summary2_->update(readout, c_monitorables[0]); 
+
+	    c_summary_->update(ihistomap->first, c_monitorables[1]);
+	    c_summary2_->update(ihistomap->first, c_monitorables[0]); 
 	  }
 	  histo_organizer.clear();
 	}
@@ -234,7 +230,7 @@ void SiStripOfflineCommissioningClient::analysis() {
 	vector<unsigned short> c_monitorables;
 	anal.analysis(c_histos, c_monitorables);
 	unsigned int val = c_monitorables[0];
-	c_summary_->update(readout, val); 
+	c_summary_->update(ihistomap->first, val); 
       }
       
       else {cout << "[SiStripOfflineCommissioningClient::analysis]: Task \"" << task_ << "\" not recognized."; return;}
@@ -260,26 +256,54 @@ void SiStripOfflineCommissioningClient::setRunInfo() {
 void SiStripOfflineCommissioningClient::prepareSummary() {
 
  //construct summary objects as necessary
-  if (task_ == sistrip::VPSP_SCAN) {
-    c_summary_ = new CommissioningSummary(SiStripHistoNamingScheme::task(task_), sistrip::APV);}
+  const char* title;
+  const char* name;
 
-  else if (task_ == sistrip::OPTO_SCAN) {
-    c_summary_ = new CommissioningSummary((string)("Bias"), sistrip::LLD_CHAN);
-    c_summary2_ = new CommissioningSummary((string)("Gain"), sistrip::LLD_CHAN);}
+  if (task_ == sistrip::OPTO_SCAN) {
+    c_summary_ = new SiStripSummary(sistrip::CONTROL);
+    title = name = ((string)("Bias")).c_str();
+    c_summary_->setName(name);
+    c_summary_->setTitle(title);
+
+    c_summary2_ = new SiStripSummary(sistrip::CONTROL);
+    title = name = ((string)("Gain")).c_str();
+    c_summary2_->setName(name);
+    c_summary2_->setTitle(title);
+  }
   
   else if (task_ == sistrip::PEDESTALS) {
-    c_summary_ = new CommissioningSummary((string)("Pedestals"), sistrip::LLD_CHAN);
-    c_summary2_ = new CommissioningSummary((string)("Noise"), sistrip::LLD_CHAN);
+    c_summary_ = new SiStripSummary(sistrip::CONTROL);
+    title = name = ((string)("Pedestals")).c_str();
+    c_summary_->setName(name);
+    c_summary_->setTitle(title);
+
+    c_summary2_ = new SiStripSummary(sistrip::CONTROL);
+    title = name = ((string)("Noise")).c_str();
+    c_summary2_->setName(name);
+    c_summary2_->setTitle(title);
   }
 
-  else {c_summary_ = new CommissioningSummary(SiStripHistoNamingScheme::task(task_), sistrip::LLD_CHAN);}
+  else {
+    c_summary_ = new SiStripSummary(sistrip::CONTROL);
+    title = name = SiStripHistoNamingScheme::task(task_).c_str();
+    c_summary_->setName(name);
+    c_summary_->setTitle(title);
+  }
   
  //Construct and name summary file...
-  string name = summary_path_.substr( 0, summary_path_.find(".root",0));
-  stringstream ss; ss << name << "_" << SiStripHistoNamingScheme::task(task_) << "_" << setfill('0') << setw(7) << run_ << ".root";
+  stringstream ss; 
+  ss << summary_path_.substr( 0, summary_path_.find(".root",0)) 
+     << "_" 
+     << SiStripHistoNamingScheme::task(task_) 
+     << "_" 
+     << setfill('0') 
+     << setw(7) 
+     << run_ 
+     << ".root";
+
   summary_ = new SiStripCommissioningFile(ss.str().c_str(), "RECREATE");
   summary_->setDQMFormat(task_,view_);
- 
+  
 }
 
 //-----------------------------------------------------------------------------
@@ -305,18 +329,17 @@ void SiStripOfflineCommissioningClient::convertMap(map< string, vector<TProfile*
   
   for (map< string, vector<TProfile*> >::iterator ihistset = directory_map->begin(); ihistset != directory_map->end(); ihistset++) {
     
+     //Find fec key.......
+      string::size_type index = ihistset->first.find(sistrip::controlView_);
+      string control = ihistset->first.substr(index);
+      SiStripHistoNamingScheme::ControlPath fec_path = SiStripHistoNamingScheme::controlPath(control);
+
     for (vector<TProfile*>::iterator ihist = ihistset->second.begin(); ihist != ihistset->second.end(); ihist++) {
       
       //extract histogram details from encoded histogram name.
       const string name((*ihist)->GetName());
       SiStripHistoNamingScheme::HistoTitle h_title = SiStripHistoNamingScheme::histoTitle(name);
-      
-      //Find fec key.......
-      string::size_type index = ihistset->first.find(sistrip::controlView_);
-      string control = ihistset->first.substr(index);
-      
-      SiStripHistoNamingScheme::ControlPath fec_path = SiStripHistoNamingScheme::controlPath(control);
-      unsigned int fec_key = SiStripControlKey::key(fec_path.fecCrate_, fec_path.fecSlot_, fec_path.fecRing_, fec_path.ccuAddr_, fec_path.ccuChan_);
+      unsigned int fec_key = SiStripControlKey::key(fec_path.fecCrate_, fec_path.fecSlot_, fec_path.fecRing_, fec_path.ccuAddr_, fec_path.ccuChan_,h_title.channel_);
  
       //update map...
       (*commissioning_map_)[fec_key].reserve(6);
@@ -334,26 +357,17 @@ void SiStripOfflineCommissioningClient::writeSummary() {
   stringstream histo_name;
 
   if (c_summary_) {
-    TH1F* control = c_summary_->controlSummary(dirLevel_);
-    histo_name << control->GetName() << "_Control";
-    control->SetName(histo_name.str().c_str());
-    TH1F* global =  c_summary_->summary(dirLevel_);
+    c_summary_->histogram(dirLevel_);
     summary_->sistripTop()->cd(dirLevel_.c_str());
-    control->Write();
-    global->Write();
-  }
+    c_summary_->getSummary()->Write();
+    c_summary_->getHistogram()->Write();}
   
   if (c_summary2_) {
-    TH1F* control = c_summary2_->controlSummary(dirLevel_);
-    histo_name.str("");
-    histo_name << control->GetName() << "_Control";
-    control->SetName(histo_name.str().c_str());
-    TH1F* global =  c_summary2_->summary(dirLevel_);
+    c_summary2_->histogram(dirLevel_);
     summary_->sistripTop()->cd(dirLevel_.c_str());
-    control->Write();
-    global->Write();
+    c_summary2_->getSummary()->Write();
+    c_summary2_->getHistogram()->Write();
   }
-  summary_->Close();
 
   if (c_summary_) delete c_summary_;
   if (c_summary2_) delete c_summary2_;

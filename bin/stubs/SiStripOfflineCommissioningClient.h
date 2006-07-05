@@ -4,7 +4,7 @@
 //analysis
 #include "DQM/SiStripCommissioningAnalysis/interface/CommissioningAnalysis.h"
 //summary
-#include "DQM/SiStripCommissioningSummary/interface/CommissioningSummary.h"
+#include "DQM/SiStripCommissioningSummary/interface/SiStripSummary.h"
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
 //root
 #include "TFile.h"
@@ -64,8 +64,8 @@ class SiStripOfflineCommissioningClient {
 
   /** Summary */
   string dirLevel_;
-  CommissioningSummary* c_summary_;
-  CommissioningSummary* c_summary2_;
+  SiStripSummary* c_summary_;
+  SiStripSummary* c_summary2_;
 
   /** Summary file name */
   SiStripCommissioningFile* summary_;
