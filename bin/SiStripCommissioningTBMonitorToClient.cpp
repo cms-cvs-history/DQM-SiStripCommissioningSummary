@@ -24,7 +24,7 @@ int main(void) {
   boost::shared_ptr<edm::Presence> theMessageServicePresence = boost::shared_ptr<edm::Presence>(edm::PresenceFactory::get()->makePresence("MessageServicePresence").release());
   
   //configure
-  string tb_path = "/afs/cern.ch/user/p/pwing/public/TBHistos/TBMonitor0030345_000.root";
+  string tb_path = "/afs/cern.ch/user/p/pwing/public/TBHistos/TBMonitor0030349_000.root";
   string client_path = "Client.root";
   sistrip::Task task = sistrip::OPTO_SCAN;
 
