@@ -26,7 +26,7 @@ int main(void) {
   //configure
   string tb_path = "/afs/cern.ch/user/p/pwing/public/TBHistos/TBMonitor0030349_000.root";
   string client_path = "Client.root";
-  sistrip::Task task = sistrip::OPTO_SCAN;
+  sistrip::Task task = sistrip::PEDESTALS;
 
   //run
   SiStripCommissioningTBMonitorToClient tbToClient(tb_path,client_path,task);
