@@ -37,7 +37,7 @@ SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient(string clie
   client_ = new SiStripCommissioningFile(client_path_.c_str());
   task_ = client_->Task();
   view_ = client_->View();
-
+  
  //Check Commissioning Task and Readout View
   if (task_ == sistrip::UNKNOWN_TASK) cout << "[SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient]: Unknown commissioning task. Value used: " << task_ << "; values accepted: Pedestals, ApvTiming, FedTiming, OptoScan, VpspScan, ApvLatency." << endl;
 
@@ -255,36 +255,36 @@ void SiStripOfflineCommissioningClient::setRunInfo() {
 
 void SiStripOfflineCommissioningClient::prepareSummary() {
 
- //construct summary objects as necessary
+  //construct summary objects as necessary
   const char* title;
   const char* name;
 
   if (task_ == sistrip::OPTO_SCAN) {
-    c_summary_ = new SiStripSummary(sistrip::CONTROL);
+    c_summary_ = new CommissioningSummary(sistrip::CONTROL);
     title = name = ((string)("Bias")).c_str();
     c_summary_->setName(name);
     c_summary_->setTitle(title);
 
-    c_summary2_ = new SiStripSummary(sistrip::CONTROL);
+    c_summary2_ = new CommissioningSummary(sistrip::CONTROL);
     title = name = ((string)("Gain")).c_str();
     c_summary2_->setName(name);
     c_summary2_->setTitle(title);
   }
   
   else if (task_ == sistrip::PEDESTALS) {
-    c_summary_ = new SiStripSummary(sistrip::CONTROL);
+    c_summary_ = new CommissioningSummary(sistrip::CONTROL);
     title = name = ((string)("Pedestals")).c_str();
     c_summary_->setName(name);
     c_summary_->setTitle(title);
 
-    c_summary2_ = new SiStripSummary(sistrip::CONTROL);
+    c_summary2_ = new CommissioningSummary(sistrip::CONTROL);
     title = name = ((string)("Noise")).c_str();
     c_summary2_->setName(name);
     c_summary2_->setTitle(title);
   }
 
   else {
-    c_summary_ = new SiStripSummary(sistrip::CONTROL);
+    c_summary_ = new CommissioningSummary(sistrip::CONTROL);
     title = name = SiStripHistoNamingScheme::task(task_).c_str();
     c_summary_->setName(name);
     c_summary_->setTitle(title);
@@ -334,7 +334,7 @@ void SiStripOfflineCommissioningClient::convertMap(map< string, vector<TProfile*
       string control = ihistset->first.substr(index);
       SiStripHistoNamingScheme::ControlPath fec_path = SiStripHistoNamingScheme::controlPath(control);
 
-    for (vector<TProfile*>::iterator ihist = ihistset->second.begin(); ihist != ihistset->second.end(); ihist++) {
+      for (vector<TProfile*>::iterator ihist = ihistset->second.begin(); ihist != ihistset->second.end(); ihist++) {
       
       //extract histogram details from encoded histogram name.
       const string name((*ihist)->GetName());

@@ -5,14 +5,13 @@
 <use name=DQM/SiStripCommissioningSummary>
 <use name=root>
 <use name=boost>
-
 <library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
 
 <bin name=SiStripOfflineCommissioningClient file=SiStripOfflineCommissioningClient.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
 
-<bin name=SiStripCommissioningTBMonitorToClient file=SiStripCommissioningTBMonitorToClient.cpp>
+<bin name=ConvertTBMonitorHistos file=ConvertTBMonitorHistos.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
 
