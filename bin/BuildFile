@@ -1,10 +1,9 @@
-
-<use name=DQM/SiStripCommissioningAnalysis>
-<use name=DQM/SiStripCommon>
 <use name=DataFormats/SiStripDetId>
+<use name=DQM/SiStripCommon>
+<use name=DQM/SiStripCommissioningAnalysis>
 <use name=DQM/SiStripCommissioningSummary>
-<use name=root>
 <use name=boost>
+<use name=root>
 <library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
 
 <bin name=SiStripOfflineCommissioningClient file=SiStripOfflineCommissioningClient.cpp>
