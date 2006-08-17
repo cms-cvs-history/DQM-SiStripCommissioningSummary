@@ -10,17 +10,20 @@ using namespace std;
 
 //-----------------------------------------------------------------------------
 
-SiStripCommissioningFile::SiStripCommissioningFile(const char* fname, Option_t* option, const char* ftitle, Int_t compress) :
+SiStripCommissioningFile::SiStripCommissioningFile( const char* fname, 
+						    Option_t* option, 
+						    const char* ftitle, 
+						    Int_t compress ) :
   TFile(fname,option,ftitle,compress),
-
   task_(sistrip::UNKNOWN_TASK),
   view_(sistrip::UNKNOWN_VIEW),
   top_(gDirectory),
   dqmTop_(0),
   sistripTop_(0),
   dqmFormat_(false)
-  
-{readDQMFormat();}
+{
+  readDQMFormat();
+}
 
 //-----------------------------------------------------------------------------
 
@@ -62,28 +65,33 @@ TDirectory* SiStripCommissioningFile::readDQMFormat() {
   if (dqmTop_) sistripTop_ = dqmTop_->GetDirectory(sistrip::root_.c_str());
   if (sistripTop_) top_ = sistripTop_->GetDirectory(sistrip::controlView_.c_str());
   if (top_!=gDirectory) view_ = sistrip::CONTROL;
-
+  
   //does file conform with DQM Format requirements?
   if (dqmTop_ && sistripTop_ && top_) {
     dqmFormat_ = true;}
   
-  //Search for commissioning task
+  // Search for commissioning task
   if (sistripTop_) {
-  TList* keylist = sistripTop_->GetListOfKeys();
-  if (keylist) {
+    TList* keylist = sistripTop_->GetListOfKeys();
+    if (keylist) {
       TObject* obj = keylist->First(); //the object
       if (obj) {
-	bool loop = true;
-	while (loop) { 
-	  if (obj == keylist->Last()) {loop = false;}
-	  if (string(obj->GetName()).find(sistrip::commissioningTask_)!=string::npos) {
-	    task_ = SiStripHistoNamingScheme::task(string(obj->GetTitle()));
-	  }
-	  obj = keylist->After(obj);
-	}
+        bool loop = true;
+        while (loop) { 
+          if (obj == keylist->Last()) {loop = false;}
+          if ( string(obj->GetName()).find(sistrip::commissioningTask_) != string::npos ) {
+            task_ = SiStripHistoNamingScheme::task( string(obj->GetTitle()).substr(2,string::npos) );
+	    cout << " name: " << string(obj->GetName())
+		 << " title: " << string(obj->GetTitle()) 
+		 << " task: " << SiStripHistoNamingScheme::task( task_ )
+		 << endl;
+          }
+          obj = keylist->After(obj);
+        }
       }
-  }
+    }
   } 
+
   return top_;
 }
 
