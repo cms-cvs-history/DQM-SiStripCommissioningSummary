@@ -20,11 +20,13 @@ class SiStripOfflineCommissioningClient {
   
  public:
 
-  typedef std::vector<const TProfile*> Histos;
-  typedef std::map< uint16_t, Histos > HistosMap;
+  typedef std::vector<TProfile*> Histos;
+  typedef std::map< uint32_t, Histos > HistosMap;
   
-  SiStripOfflineCommissioningClient( std::string file, 
-				     std::string level = "ControlView/" );
+  SiStripOfflineCommissioningClient( std::string filename,
+				     sistrip::SummaryHisto,
+				     sistrip::SummaryType,
+				     std::string level );
   ~SiStripOfflineCommissioningClient();
   
   /** Performs analysis on each commissioning histogram found in the
@@ -34,48 +36,36 @@ class SiStripOfflineCommissioningClient {
  private: // ---------- private methods ----------
   
   /** Sets run number based on name of input root file. */
-  void setRunNumber();
+  void setRunNumber() {;}
   
-  /** Constructs summary histogram according to commissioning task. */
-  void createSummaryHisto();
-  
-  /** Fills map (containing commissioning histograms) using the contents
-      of the root file (accessible using SiStripCommissioningFile). */
+  /** Fills map (containing commissioning histograms) using the
+      contents of the root file (accessible using
+      SiStripCommissioningFile). Converts from a map using "directory
+      string" as its key to a map that instead uses the "FEC key". */
   void fillMap();
   
-  /** Converts from a map using "directory string" as its key to a map
-      that instead uses the "FEC key". */
-  void convertMap( std::map< std::string, std::vector<TProfile*> >& );
-  
-  /** Fills the summary histogram and writes it to file. */
-  void writeSummaryHistoToFile();
-
   void apvTiming();
+  void fedTiming();
+  void pedestals();
+  void optoScan();
+  void vpspScan();
 
  private: // ---------- member data ----------
   
   /** Client (Input) file */
-  std::string file_;
+  std::string filename_;
   
-  /** Output file name */
-  std::string summary_path_;
-
-  /** Commissioning task */
   sistrip::Task task_;
-
-  /** Commissioning File View */
   sistrip::View view_;
 
-  /** Summary */
-  std::string level_;
-  /*   CommissioningSummary* c_summary_; */
-  /*   CommissioningSummary* c_summary2_; */
-
-  /** Summary file name */
-  SiStripCommissioningFile* summary_;
+  sistrip::SummaryHisto histo_;
+  sistrip::SummaryType type_;
   
+  /** Directory level of summary histogram. */
+  std::string level_;
+
   /** Client (Input) file */
-  SiStripCommissioningFile* client_;
+  SiStripCommissioningFile* file_;
   
   /** Run number */
   uint16_t run_;

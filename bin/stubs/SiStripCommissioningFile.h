@@ -26,13 +26,16 @@ class SiStripCommissioningFile : public TFile {
  public:
 
   /** Constructor */
-  SiStripCommissioningFile(const char* fname, Option_t* option = "", const char* ftitle = "", Int_t compress = 1);
-
+  SiStripCommissioningFile( const char* fname, 
+			    Option_t* option = "UPDATE", 
+			    const char* ftitle = "", 
+			    Int_t compress = 1 );
+  
   /** Destructor */
   virtual ~SiStripCommissioningFile();
 
   /** Formats the commissioning file with the correct "top-level" directory structure. Inserts string defining commissioning task in sistrip::root_ directory */
-  TDirectory* setDQMFormat(sistrip::Task, sistrip::View);
+  TDirectory* setDQMFormat( sistrip::Task, sistrip::View );
 
   /** Checks file complies with DQM format requirements. If so, updates record directory "top-level" directory structure and of readout view and commissioning task. */
   TDirectory* readDQMFormat();

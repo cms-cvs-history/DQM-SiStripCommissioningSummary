@@ -13,33 +13,31 @@
 */
 
 int main( int argc, char* argv[] ) {
-
+  
   // Default values for arguments
-  std::string file  = "client.root";
-  std::string level = "ControlView/";
-  std::string task  = "APV_TIMING";
-  std::string view  = "CONTROL";
+  std::string file = "client.root";
+  sistrip::SummaryHisto histo = sistrip::APV_TIMING_DELAY;
+  sistrip::SummaryType type = sistrip::SUMMARY_SIMPLE_DISTR;
+  std::string level  = "DQMData/SiStrip/ControlView/";
 
   // Read in args to main
-  if ( argc > 1 ) { file = argv[1]; }
-  if ( argc > 2 ) { file = argv[2]; }
-  if ( argc > 3 ) { file = argv[3]; }
-  if ( argc > 4 ) { file = argv[4]; }
-
+  if ( argc > 1 ) { file  = argv[1]; }
+  if ( argc > 2 ) { histo = atoi( argv[2] ); }
+  if ( argc > 3 ) { type  = atoi( argv[3] ); }
+  if ( argc > 4 ) { level = argv[4]; }
+  
   std::cout << "OfflineClient:"
 	    << " file:  " << file << std::endl
-	    << " level: " << level << std::endl
-	    << " task:  " << task << std::endl
-	    << " view:  " << view << std::endl;
+// 	    << " task:  " << SiStripHistoNamingScheme::task( task ) << std::endl
+// 	    << " view:  " << SiStripHistoNamingScheme::view( view ) << std::endl
+	    << " level: " << level << std::endl;
   
   // Service allows use of MessageLogger
   edm::AssertHandler ah;
   boost::shared_ptr<edm::Presence> message = boost::shared_ptr<edm::Presence>( edm::PresenceFactory::get()->makePresence("MessageServicePresence").release() );
   
   // Run client
-  SiStripOfflineCommissioningClient client( file, level );
-  client.analysis();
+  SiStripOfflineCommissioningClient client( file, histo, type, level );
   
   return 0;
 }
-

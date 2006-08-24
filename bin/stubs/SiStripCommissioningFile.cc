@@ -192,16 +192,18 @@ void SiStripCommissioningFile::findProfiles(TDirectory* dir, map< string, vector
 
   //loop through all directories and record tprofiles (matching label taskId_) contained within them.
 
-    while ( !dirs.empty() ) { 
-     dirContent(dirs[0], &dirs, histos);
-      dirs.erase(dirs.begin());
-    }
+  while ( !dirs.empty() ) { 
+    dirContent(dirs[0], &dirs, histos);
+    dirs.erase(dirs.begin());
+  }
 }
 
 //-----------------------------------------------------------------------------
 
 
- void SiStripCommissioningFile::dirContent(TDirectory* dir, vector<TDirectory*>* dirs, map< string, vector<TProfile*> >* histos) {
+ void SiStripCommissioningFile::dirContent(TDirectory* dir, 
+					   vector<TDirectory*>* dirs, 
+					   map< string, vector<TProfile*> >* histos ) {
 
     TList* keylist = dir->GetListOfKeys();
 
@@ -219,12 +221,16 @@ void SiStripCommissioningFile::findProfiles(TDirectory* dir, map< string, vector
 	    //update record of directories
 	    dirs->push_back(child);
 	  }
-
+	  
 	  if (dynamic_cast<TProfile*>(dir->Get(obj->GetName()))) {
 	    TProfile* tprof = dynamic_cast<TProfile*>(dir->Get(obj->GetName()));
-	      //update record of tprofiles
-	      (*histos)[string(dir->GetPath())].reserve(6);
-	      (*histos)[string(dir->GetPath())].push_back(tprof);
+	    //update record of tprofiles
+	    bool found = false;
+	    vector<TProfile*>::iterator iprof = (*histos)[string(dir->GetPath())].begin();
+	    for ( ; iprof != (*histos)[string(dir->GetPath())].end(); iprof++ ) {
+	      if ( (*iprof)->GetName() == tprof->GetName() ) { found = true; }
+	    }
+	    if ( !found ) { (*histos)[string(dir->GetPath())].push_back(tprof); }
 	  }
 	  obj = keylist->After(obj);
 	}
