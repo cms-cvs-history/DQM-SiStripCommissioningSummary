@@ -81,10 +81,10 @@ TDirectory* SiStripCommissioningFile::readDQMFormat() {
           if (obj == keylist->Last()) {loop = false;}
           if ( string(obj->GetName()).find(sistrip::commissioningTask_) != string::npos ) {
             task_ = SiStripHistoNamingScheme::task( string(obj->GetTitle()).substr(2,string::npos) );
-	    cout << " name: " << string(obj->GetName())
-		 << " title: " << string(obj->GetTitle()) 
-		 << " task: " << SiStripHistoNamingScheme::task( task_ )
-		 << endl;
+// 	    cout << " name: " << string(obj->GetName())
+// 		 << " title: " << string(obj->GetTitle()) 
+// 		 << " task: " << SiStripHistoNamingScheme::task( task_ )
+// 		 << endl;
           }
           obj = keylist->After(obj);
         }

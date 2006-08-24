@@ -1,6 +1,7 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripOfflineCommissioningClient.h"
 #include "DataFormats/SiStripDetId/interface/SiStripControlKey.h"
 #include "DQM/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DQM/SiStripCommon/interface/SummaryGenerator.h"
 #include "DQM/SiStripCommissioningAnalysis/interface/ApvTimingAnalysis.h"
 #include "DQM/SiStripCommissioningAnalysis/interface/FedTimingAnalysis.h"
 #include "DQM/SiStripCommissioningAnalysis/interface/OptoScanAnalysis.h"
@@ -38,6 +39,9 @@ SiStripOfflineCommissioningClient::SiStripOfflineCommissioningClient( string fil
   file_ = new SiStripCommissioningFile( filename_.c_str() );
   task_ = file_->Task(); 
   view_ = file_->View(); 
+  cout << "In file: " << filename_ << endl
+       << " commissioning task: " << SiStripHistoNamingScheme::task( task_ ) << endl
+       << " logical view:       " << SiStripHistoNamingScheme::view( view_ ) << endl;
   
   if ( !file_->queryDQMFormat() ) { 
     cout << "[" << __PRETTY_FUNCTION__ << "]"
@@ -78,8 +82,12 @@ void SiStripOfflineCommissioningClient::analysis() {
   fillMap();
 
   if      ( task_ == sistrip::APV_TIMING ) { apvTiming(); }
+  else if ( task_ == sistrip::FED_TIMING ) { fedTiming(); }
   else if ( task_ == sistrip::OPTO_SCAN )  { optoScan(); }
-  else { /* do nothing yet... */ }
+  else if ( task_ == sistrip::VPSP_SCAN )  { vpspScan(); }
+  else if ( task_ == sistrip::PEDESTALS )  { pedestals(); }
+  else { cerr <<  "[" << __PRETTY_FUNCTION__ << "]"
+	      << " Unknown task: " << task_ << endl; }
   
 }
 
@@ -95,63 +103,62 @@ void SiStripOfflineCommissioningClient::fillMap() {
   // Convert map (to use FEC key as index, rather than directory string)
   map< string, vector<TProfile*> >::iterator iter = histos.begin();
   for ( ; iter != histos.end(); iter++ ) {
-    cout << "PATH: " << iter->first << endl;
+    //cout << "Directory: " << iter->first << endl;
     uint32_t index = iter->first.find( sistrip::controlView_ );
     string control = iter->first.substr( index );
     SiStripHistoNamingScheme::ControlPath path = SiStripHistoNamingScheme::controlPath( control );
     vector<TProfile*>::iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
-      cout << "NAME: " << (*ihis)->GetName() << endl;
-      SiStripHistoNamingScheme::HistoTitle h_title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
+      SiStripHistoNamingScheme::HistoTitle title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
+      uint16_t channel = ( title.granularity_ == sistrip::APV ) ? (title.channel_-32)/2 : title.channel_;
       uint32_t key = SiStripControlKey::key( path.fecCrate_, 
 					     path.fecSlot_, 
 					     path.fecRing_, 
 					     path.ccuAddr_, 
 					     path.ccuChan_,
-					     h_title.channel_ );
+					     channel );
       map_[key].push_back(*ihis);
+      //cout << "Key: 0x" << hex << setw(8) << setfill('0') << key << dec
+      //<< "  Histo: " << (*ihis)->GetName() << endl;
     }
   }
 
+  if ( map_.empty() ) {
+    cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	 << " Zero histograms found!" << endl;
+  }
+  
 }
   
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineCommissioningClient::apvTiming() {
-  cout << DBG << endl;
   
   // Storage for monitorables
   map<uint32_t,ApvTimingAnalysis::Monitorables> monitorables;
   
-  // loop over histograms
+  // Iterate through map
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
+
+    // Iterate through vector of histos
+    TProfile* prof = 0;
     Histos::const_iterator ihis = imap->second.begin(); 
     for ( ; ihis != imap->second.end(); ihis++ ) {
-      // Do histo analysis and create monitorables object
-      ApvTimingAnalysis::Monitorables mons;
-      ApvTimingAnalysis::analysis( *ihis, mons );
-      monitorables[imap->first] = mons;
+      // Extract apv timing histo
+      prof = *ihis;
     }
+
+    // Do histo analysis and create monitorables object
+    ApvTimingAnalysis::Monitorables mons;
+    ApvTimingAnalysis::analysis( prof, mons );
+    monitorables[imap->first] = mons;
+    
   }
-  
-  // Some debug
-  cout << " Complete list of APV timing delays [ns] for " 
-       << monitorables.size() << " modules: ";
-  map<uint32_t,ApvTimingAnalysis::Monitorables>::const_iterator iter;
-  for ( iter = monitorables.begin(); iter != monitorables.end(); iter++ ) {
-    cout << iter->second.delay_ << ", ";
-  }
-  cout << endl;
   
   // Create summary histogram
-  SummaryHistogramFactory<ApvTimingAnalysis::Monitorables> factory;
-  string name = factory.name( histo_, 
-			      type_, 
-			      view_, 
-			      level_ );
   TH1F* summary = new TH1F();
-  summary->SetName( name.c_str() );
+  SummaryHistogramFactory<ApvTimingAnalysis::Monitorables> factory;
   factory.generate( histo_,
 		    type_,
 		    view_, 
@@ -160,6 +167,7 @@ void SiStripOfflineCommissioningClient::apvTiming() {
 		    *summary );
   
   // Write histo to file
+  file_->addPath(level_)->cd();
   summary->Write();
   
 }
@@ -167,7 +175,6 @@ void SiStripOfflineCommissioningClient::apvTiming() {
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineCommissioningClient::fedTiming() {
-  cout << DBG << endl;
   
   // Storage for monitorables
   map<uint32_t,FedTimingAnalysis::Monitorables> monitorables;
@@ -184,23 +191,9 @@ void SiStripOfflineCommissioningClient::fedTiming() {
     }
   }
   
-  // Some debug
-  cout << " Complete list of FED timing delays [ns] for " 
-       << monitorables.size() << " modules: ";
-  map<uint32_t,FedTimingAnalysis::Monitorables>::const_iterator iter;
-  for ( iter = monitorables.begin(); iter != monitorables.end(); iter++ ) {
-    cout << iter->second.delay_ << ", ";
-  }
-  cout << endl;
-  
   // Create summary histogram
-  SummaryHistogramFactory<FedTimingAnalysis::Monitorables> factory;
-  string name = factory.name( histo_, 
-			      type_, 
-			      view_, 
-			      level_ );
   TH1F* summary = new TH1F();
-  summary->SetName( name.c_str() );
+  SummaryHistogramFactory<FedTimingAnalysis::Monitorables> factory;
   factory.generate( histo_,
 		    type_,
 		    view_, 
@@ -209,6 +202,7 @@ void SiStripOfflineCommissioningClient::fedTiming() {
 		    *summary );
   
   // Write histo to file
+  file_->addPath(level_)->cd();
   summary->Write();
   
 }
@@ -216,7 +210,6 @@ void SiStripOfflineCommissioningClient::fedTiming() {
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineCommissioningClient::pedestals() {
-  cout << DBG << endl;
   
   // Storage for monitorables
   map<uint32_t,PedestalsAnalysis::Monitorables> monitorables;
@@ -241,7 +234,7 @@ void SiStripOfflineCommissioningClient::pedestals() {
       title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
       
       // Some checks
-      if ( title.task_ != sistrip::OPTO_SCAN ) {
+      if ( title.task_ != sistrip::PEDESTALS ) {
 	cerr << "[" << __PRETTY_FUNCTION__ << "]"
 	     << " Unexpected commissioning task!"
 	     << "(" << SiStripHistoNamingScheme::task( title.task_ ) << ")"
@@ -263,26 +256,13 @@ void SiStripOfflineCommissioningClient::pedestals() {
     // Perform histo analysis
     PedestalsAnalysis::Monitorables mons;
     PedestalsAnalysis::analysis( profs, mons );
+    monitorables[imap->first] = mons;
 
   }
 
-  // Some debug
-  cout << " Complete list of mean peds (APV0) for "
-       << monitorables.size() << " modules: ";
-  map<uint32_t,PedestalsAnalysis::Monitorables>::const_iterator iter;
-  for ( iter = monitorables.begin(); iter != monitorables.end(); iter++ ) {
-    cout << iter->second.pedsMean_[0] << ", ";
-  }
-  cout << endl;
-  
   // Create summary histogram
-  SummaryHistogramFactory<PedestalsAnalysis::Monitorables> factory;
-  string name = factory.name( histo_, 
-			      type_, 
-			      view_, 
-			      level_ );
   TH1F* summary = new TH1F();
-  summary->SetName( name.c_str() );
+  SummaryHistogramFactory<PedestalsAnalysis::Monitorables> factory;
   factory.generate( histo_,
 		    type_,
 		    view_, 
@@ -291,14 +271,14 @@ void SiStripOfflineCommissioningClient::pedestals() {
 		    *summary );
   
   // Write histo to file
-  file_->Write();
+  file_->addPath(level_)->cd();
+  summary->Write();
   
 }
 
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineCommissioningClient::optoScan() {
-  cout << DBG << endl;
   
   // Storage for monitorables
   map<uint32_t,OptoScanAnalysis::Monitorables> monitorables;
@@ -373,26 +353,13 @@ void SiStripOfflineCommissioningClient::optoScan() {
     // Perform histo analysis
     OptoScanAnalysis::Monitorables mons;
     OptoScanAnalysis::analysis( profs, mons );
-
+    monitorables[imap->first] = mons;
+    
   }
-
-  // Some debug
-  cout << " Complete list of measured gains for " 
-       << monitorables.size() << " modules: ";
-  map<uint32_t,OptoScanAnalysis::Monitorables>::const_iterator iter;
-  for ( iter = monitorables.begin(); iter != monitorables.end(); iter++ ) {
-    cout << iter->second.gain_ << ", ";
-  }
-  cout << endl;
   
   // Create summary histogram
-  SummaryHistogramFactory<OptoScanAnalysis::Monitorables> factory;
-  string name = factory.name( histo_, 
-			      type_, 
-			      view_, 
-			      level_ );
   TH1F* summary = new TH1F();
-  summary->SetName( name.c_str() );
+  SummaryHistogramFactory<OptoScanAnalysis::Monitorables> factory;
   factory.generate( histo_,
 		    type_,
 		    view_, 
@@ -401,14 +368,14 @@ void SiStripOfflineCommissioningClient::optoScan() {
 		    *summary );
 
   // Write histo to file
-  file_->Write();
+  file_->addPath(level_)->cd();
+  summary->Write();
   
 }
 
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineCommissioningClient::vpspScan() {
-  cout << DBG << endl;
   
   // Storage for monitorables
   map<uint32_t,VpspScanAnalysis::Monitorables> monitorables;
@@ -417,6 +384,12 @@ void SiStripOfflineCommissioningClient::vpspScan() {
   HistosMap::iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
 
+    if ( imap->second.empty() ) {
+      cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	   << " Zero histograms found!" << endl;
+      continue;
+    }
+    
     // Iterate through vector of histos
     VpspScanAnalysis::TProfiles profs;
     Histos::iterator ihis = imap->second.begin(); 
@@ -443,14 +416,11 @@ void SiStripOfflineCommissioningClient::vpspScan() {
       // Store histo pointers
       if ( title.channel_ >= 32 &&
 	   title.channel_ <= 37 ) { 
-	if ( title.channel_%2 == 0 ) { 
-	  profs.vpsp0_ = *ihis;
-	} else if ( title.channel_%2 == 1 ) { 
-	  profs.vpsp1_ = *ihis;
-	} else {
-	  cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	if ( title.channel_%2 == 0 ) { profs.vpsp0_ = *ihis; }
+	if ( title.channel_%2 == 1 ) { profs.vpsp1_ = *ihis; }
+      } else {
+	cerr << "[" << __PRETTY_FUNCTION__ << "]"
 	     << " Unexpected channel setting! (" << title.channel_ << ")" << endl;
-	}
       }
       
     }
@@ -458,26 +428,13 @@ void SiStripOfflineCommissioningClient::vpspScan() {
     // Perform histo analysis
     VpspScanAnalysis::Monitorables mons;
     VpspScanAnalysis::analysis( profs, mons );
+    monitorables[imap->first] = mons;
 
   }
 
-  // Some debug
-  cout << " Complete list of measured VPSP for " 
-       << monitorables.size() << " modules: ";
-  map<uint32_t,VpspScanAnalysis::Monitorables>::const_iterator iter;
-  for ( iter = monitorables.begin(); iter != monitorables.end(); iter++ ) {
-    cout << iter->second.vpsp0_ << ", ";
-  }
-  cout << endl;
-  
   // Create summary histogram
-  SummaryHistogramFactory<VpspScanAnalysis::Monitorables> factory;
-  string name = factory.name( histo_, 
-			      type_, 
-			      view_, 
-			      level_ );
   TH1F* summary = new TH1F();
-  summary->SetName( name.c_str() );
+  SummaryHistogramFactory<VpspScanAnalysis::Monitorables> factory;
   factory.generate( histo_,
 		    type_,
 		    view_, 
@@ -486,6 +443,7 @@ void SiStripOfflineCommissioningClient::vpspScan() {
 		    *summary );
 
   // Write histo to file
-  file_->Write();
+  file_->addPath(level_)->cd();
+  summary->Write();
   
 }

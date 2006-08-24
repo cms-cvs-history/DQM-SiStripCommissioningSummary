@@ -26,10 +26,10 @@ int main( int argc, char* argv[] ) {
   if ( argc > 3 ) { type  = atoi( argv[3] ); }
   if ( argc > 4 ) { level = argv[4]; }
   
-  std::cout << "OfflineClient:"
+  std::cout << "OfflineClient:" << std::endl
 	    << " file:  " << file << std::endl
-// 	    << " task:  " << SiStripHistoNamingScheme::task( task ) << std::endl
-// 	    << " view:  " << SiStripHistoNamingScheme::view( view ) << std::endl
+ 	    << " histo: " << SiStripHistoNamingScheme::summaryHisto( histo ) << std::endl
+ 	    << " type:  " << SiStripHistoNamingScheme::summaryType( type ) << std::endl
 	    << " level: " << level << std::endl;
   
   // Service allows use of MessageLogger
