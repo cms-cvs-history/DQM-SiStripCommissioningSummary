@@ -17,7 +17,7 @@ int main( int argc, char* argv[] ) {
   // Default values for arguments
   std::string file = "client.root";
   sistrip::SummaryHisto histo = sistrip::APV_TIMING_DELAY;
-  sistrip::SummaryType type = sistrip::SUMMARY_SIMPLE_DISTR;
+  sistrip::SummaryType type = sistrip::SUMMARY_DISTR;
   std::string level  = "DQMData/SiStrip/ControlView/";
 
   // Read in args to main

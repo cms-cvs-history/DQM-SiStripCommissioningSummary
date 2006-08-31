@@ -44,6 +44,7 @@ class SiStripOfflineCommissioningClient {
       string" as its key to a map that instead uses the "FEC key". */
   void fillMap();
   
+  void fedCabling();
   void apvTiming();
   void fedTiming();
   void pedestals();

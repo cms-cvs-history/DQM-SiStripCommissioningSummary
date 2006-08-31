@@ -2,6 +2,7 @@
 #include "DataFormats/SiStripDetId/interface/SiStripControlKey.h"
 #include "DQM/SiStripCommon/interface/SiStripHistoNamingScheme.h"
 #include "DQM/SiStripCommon/interface/SummaryGenerator.h"
+#include "DQM/SiStripCommissioningAnalysis/interface/FedCablingAnalysis.h"
 #include "DQM/SiStripCommissioningAnalysis/interface/ApvTimingAnalysis.h"
 #include "DQM/SiStripCommissioningAnalysis/interface/FedTimingAnalysis.h"
 #include "DQM/SiStripCommissioningAnalysis/interface/OptoScanAnalysis.h"
@@ -81,11 +82,13 @@ void SiStripOfflineCommissioningClient::analysis() {
   // Fill map with commissioning histograms 
   fillMap();
 
-  if      ( task_ == sistrip::APV_TIMING ) { apvTiming(); }
-  else if ( task_ == sistrip::FED_TIMING ) { fedTiming(); }
-  else if ( task_ == sistrip::OPTO_SCAN )  { optoScan(); }
-  else if ( task_ == sistrip::VPSP_SCAN )  { vpspScan(); }
-  else if ( task_ == sistrip::PEDESTALS )  { pedestals(); }
+  // Analyse map
+  if      ( task_ == sistrip::FED_CABLING ) { fedCabling(); }
+  if      ( task_ == sistrip::APV_TIMING )  { apvTiming(); }
+  else if ( task_ == sistrip::FED_TIMING )  { fedTiming(); }
+  else if ( task_ == sistrip::OPTO_SCAN )   { optoScan(); }
+  else if ( task_ == sistrip::VPSP_SCAN )   { vpspScan(); }
+  else if ( task_ == sistrip::PEDESTALS )   { pedestals(); }
   else { cerr <<  "[" << __PRETTY_FUNCTION__ << "]"
 	      << " Unknown task: " << task_ << endl; }
   
@@ -130,6 +133,74 @@ void SiStripOfflineCommissioningClient::fillMap() {
   
 }
   
+//-----------------------------------------------------------------------------
+//
+void SiStripOfflineCommissioningClient::fedCabling() {
+  
+  // Storage for monitorables
+  map<uint32_t,FedCablingAnalysis::Monitorables> monitorables;
+  
+  // Iterate through map
+  HistosMap::const_iterator imap = map_.begin(); 
+  for ( ; imap != map_.end(); imap++ ) {
+    
+    // Iterate through vector of histos
+    FedCablingAnalysis::TProfiles profs;
+    Histos::const_iterator ihis = imap->second.begin(); 
+    for ( ; ihis != imap->second.end(); ihis++ ) {
+      
+      if ( !(*ihis) ) {
+	cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	     << " NULL pointer to histogram!" << endl;
+	continue;
+      }
+
+      // Retrieve control key
+      static SiStripHistoNamingScheme::HistoTitle title;
+      title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
+      
+      // Some checks
+      if ( title.task_ != sistrip::FED_CABLING ) {
+	cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	     << " Unexpected commissioning task!"
+	     << "(" << SiStripHistoNamingScheme::task( title.task_ ) << ")"
+	     << endl;
+      }
+
+      // Extract FED id and channel histos
+      if ( title.extraInfo_.find(sistrip::fedId_) != string::npos ) {
+	profs.fedId_ = *ihis;
+      } else if ( title.extraInfo_.find(sistrip::fedChannel_) != string::npos ) {
+	profs.fedCh_ = *ihis;
+      } else { 
+	cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	     << " Unexpected 'extra info': " << title.extraInfo_ << endl;
+      }
+
+    }
+    
+    // Do histo analysis and create monitorables object
+    FedCablingAnalysis::Monitorables mons;
+    FedCablingAnalysis::analysis( profs, mons );
+    monitorables[imap->first] = mons;
+    
+  }
+  
+  // Create summary histogram
+  TH1F* summary = new TH1F();
+  SummaryHistogramFactory<FedCablingAnalysis::Monitorables> factory;
+  factory.generate( histo_,
+		    type_,
+		    view_, 
+		    level_, 
+		    monitorables,
+		    *summary );
+  
+  // Write histo to file
+  file_->addPath(level_)->cd();
+  summary->Write();
+  
+}
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineCommissioningClient::apvTiming() {
@@ -218,6 +289,15 @@ void SiStripOfflineCommissioningClient::pedestals() {
   HistosMap::iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
 
+    SiStripControlKey::ControlPath path = SiStripControlKey::path( imap->first );
+    cout << " Crate" << path.fecCrate_
+	 << " FEC" << path.fecSlot_
+	 << " Ring" << path.fecRing_
+	 << " CCU" << path.ccuAddr_
+	 << " Module" << path.ccuChan_
+	 << " Channel" << path.channel_
+	 << endl;
+    
     // Iterate through vector of histos
     PedestalsAnalysis::TProfiles profs;
     Histos::iterator ihis = imap->second.begin(); 
@@ -240,7 +320,7 @@ void SiStripOfflineCommissioningClient::pedestals() {
 	     << "(" << SiStripHistoNamingScheme::task( title.task_ ) << ")"
 	     << endl;
       }
-
+      
       // Extract peds and noise histos
       if ( title.extraInfo_.find(sistrip::pedsAndRawNoise_) != string::npos ) {
 	profs.peds_ = *ihis;
@@ -257,6 +337,10 @@ void SiStripOfflineCommissioningClient::pedestals() {
     PedestalsAnalysis::Monitorables mons;
     PedestalsAnalysis::analysis( profs, mons );
     monitorables[imap->first] = mons;
+    
+    stringstream ss;
+    mons.print( ss ); 
+    cout << ss.str() << endl;
 
   }
 
@@ -287,6 +371,15 @@ void SiStripOfflineCommissioningClient::optoScan() {
   HistosMap::iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
 
+    SiStripControlKey::ControlPath path = SiStripControlKey::path( imap->first );
+    cout << " Crate" << path.fecCrate_
+	 << " FE" << path.fecSlot_
+	 << " Ring" << path.fecRing_
+	 << " CCU" << path.ccuAddr_
+	 << " Module" << path.ccuChan_
+	 << " Channel" << path.channel_
+	 << endl;
+
     // Iterate through vector of histos
     OptoScanAnalysis::TProfiles profs;
     Histos::iterator ihis = imap->second.begin(); 
@@ -301,7 +394,8 @@ void SiStripOfflineCommissioningClient::optoScan() {
       // Retrieve control key
       static SiStripHistoNamingScheme::HistoTitle title;
       title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
-      
+      cout << " Title: " << (*ihis)->GetName() << endl;
+
       // Some checks
       if ( title.task_ != sistrip::OPTO_SCAN ) {
 	cerr << "[" << __PRETTY_FUNCTION__ << "]"
@@ -354,9 +448,13 @@ void SiStripOfflineCommissioningClient::optoScan() {
     OptoScanAnalysis::Monitorables mons;
     OptoScanAnalysis::analysis( profs, mons );
     monitorables[imap->first] = mons;
-    
-  }
+
+    stringstream ss;
+    for ( uint16_t igain = 0; igain < 4; igain++ ) { mons.print( ss, igain ); }
+    cout << ss.str() << endl;
   
+  }
+
   // Create summary histogram
   TH1F* summary = new TH1F();
   SummaryHistogramFactory<OptoScanAnalysis::Monitorables> factory;
