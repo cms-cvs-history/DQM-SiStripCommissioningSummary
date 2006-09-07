@@ -177,7 +177,7 @@ SiStripHistoNamingScheme::HistoTitle ConvertTBMonitorHistos::histoTitle(const st
   
   title.task_   = sistrip::UNKNOWN_TASK;
   title.contents_   = sistrip::COMBINED;
-  title.keyType_     = sistrip::FEC;
+  title.keyType_     = sistrip::FEC_KEY;
   title.keyValue_    = 0;
   title.granularity_ = sistrip::UNKNOWN_GRAN;
   title.channel_     = 0;

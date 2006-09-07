@@ -4,9 +4,19 @@
 <use name=DQM/SiStripCommissioningSummary>
 <use name=boost>
 <use name=root>
+
+<use name=FWCore/Utilities>
+<use name=FWCore/ParameterSet>
+<use name=FWCore/ServiceRegistry>
+<use name=FWCore/MessageLogger>
+<use name=FWCore/MessageService>
+
+<Flags CXXFLAGS="-O0 -g -DDEBUG">
+CXXFLAGS := $(patsubst -O2,,$(CXXFLAGS))
+
 <library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
 
-<bin name=SiStripOfflineCommissioningClient file=SiStripOfflineCommissioningClient.cpp>
+<bin name=SiStripOfflineClient file=SiStripOfflineClient.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
 

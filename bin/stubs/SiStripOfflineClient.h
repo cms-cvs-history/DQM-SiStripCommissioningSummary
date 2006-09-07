@@ -1,33 +1,31 @@
-#ifndef DQM_SiStripCommissioningSummary_SiStripOfflineCommissioningClient_H
-#define DQM_SiStripCommissioningSummary_SiStripOfflineCommissioningClient_H
+#ifndef DQM_SiStripCommissioningSummary_SiStripOfflineClient_H
+#define DQM_SiStripCommissioningSummary_SiStripOfflineClient_H
 
-#include "DQM/SiStripCommissioningAnalysis/interface/CommissioningAnalysis.h" 
-/* #include "DQM/SiStripCommissioningSummary/interface/CommissioningSummary.h" */
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
 #include <boost/cstdint.hpp>
-#include "TProfile.h"
-#include "TFile.h"
 #include <string>
 
 /**
-   @file : DQM/SiStripCommissioningSummary/bin/stubs/SiStripOfflineCommissioningClient.h
-   @class : SiStripOfflineCommissioningClient
-   @author: M.Wingham
+   @class SiStripOfflineClient
+   @author M.Wingham, R.Bainbridge
    
-   @brief : Class which reads TProfile commissioning histograms from a "client" file, performs an analysis to extract "commissioning monitorables" for each device and adds them to a summary map. The contents of the map (values and errors) are then histogrammed and written to a separate file. 
+   @brief Class which reads TProfile histograms from a "commissioning
+   client" root file, performs an analysis to extract the
+   "monitorables" and creates a summary histogram.
 */
-class SiStripOfflineCommissioningClient {
+class SiStripOfflineClient {
   
  public:
-
+  
   typedef std::vector<TProfile*> Histos;
   typedef std::map< uint32_t, Histos > HistosMap;
   
-  SiStripOfflineCommissioningClient( std::string filename,
-				     sistrip::SummaryHisto,
-				     sistrip::SummaryType,
-				     std::string level );
-  ~SiStripOfflineCommissioningClient();
+  SiStripOfflineClient( const std::string& filename,
+			const sistrip::SummaryHisto&,
+			const sistrip::SummaryType&,
+			const std::string& top_level_dir,
+			const sistrip::Granularity& );
+  ~SiStripOfflineClient();
   
   /** Performs analysis on each commissioning histogram found in the
       input root file and saves monitorables in map/histo. */
@@ -42,14 +40,14 @@ class SiStripOfflineCommissioningClient {
       contents of the root file (accessible using
       SiStripCommissioningFile). Converts from a map using "directory
       string" as its key to a map that instead uses the "FEC key". */
-  void fillMap();
+  void fillHistoMap();
   
   void fedCabling();
   void apvTiming();
   void fedTiming();
-  void pedestals();
   void optoScan();
   void vpspScan();
+  void pedestals();
 
  private: // ---------- member data ----------
   
@@ -62,8 +60,11 @@ class SiStripOfflineCommissioningClient {
   sistrip::SummaryHisto histo_;
   sistrip::SummaryType type_;
   
-  /** Directory level of summary histogram. */
+  /** Top-level directory for summary histogram. */
   std::string level_;
+  
+  /** Granularity for summary histogram. */
+  sistrip::Granularity gran_;
 
   /** Client (Input) file */
   SiStripCommissioningFile* file_;
@@ -76,4 +77,4 @@ class SiStripOfflineCommissioningClient {
   
 };
 
-#endif // DQM_SiStripCommissioningSummary_SiStripOfflineCommissioningClient_H
+#endif // DQM_SiStripCommissioningSummary_SiStripOfflineClient_H
