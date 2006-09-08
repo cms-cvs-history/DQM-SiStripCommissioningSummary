@@ -16,7 +16,6 @@ MessageLoggerInstance::MessageLoggerInstance()
 {
   cout << "[" << __PRETTY_FUNCTION__ << "]" << endl;
   instance_ = this;
-  create();
 }
 
 // -----------------------------------------------------------------------------
@@ -77,7 +76,21 @@ void MessageLoggerInstance::deleteInstance() {
 
 // -----------------------------------------------------------------------------
 // 
-void MessageLoggerInstance::create() {
+void MessageLoggerInstance::doRealWork() {
+  useMessageLogger();
+}
+
+// -----------------------------------------------------------------------------
+// 
+void MessageLoggerInstance::putCodeHere() {
+  edm::LogInfo("Test") << "INFO TEST" << std::endl; 
+  LogDebug("Test") << "DEBUG TEST" << std::endl; 
+  edm::LogError("Test") << "ERROR TEST" << std::endl; 
+}
+
+// -----------------------------------------------------------------------------
+// 
+void MessageLoggerInstance::useMessageLogger() {
 
   try {
 
@@ -91,7 +104,9 @@ void MessageLoggerInstance::create() {
     
     // Construct path to "MessageLogger.cfg" file
     stringstream filename; 
-    if ( getenv("CMSSW_BASE") != NULL ) { filename << getenv("CMSSW_BASE") << "/src/"; }
+    if ( getenv("CMSSW_BASE") != NULL ) { 
+      filename << getenv("CMSSW_BASE") << "/src/"; 
+    }
     filename << cfgFile_;
     
     // Read a configuration from the "MessageLogger.cfg" file
@@ -129,6 +144,8 @@ void MessageLoggerInstance::create() {
     
     // Make the services available
     edm::ServiceRegistry::Operate operate(tempToken);
+
+    putCodeHere();
     
   }
   

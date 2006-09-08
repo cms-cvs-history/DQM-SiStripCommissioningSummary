@@ -14,14 +14,19 @@ class MessageLoggerInstance {
 
   inline void configurationFile( const std::string& filename );
   
+  void doRealWork();
+
  private:
+  
+  void useMessageLogger();
+  void putCodeHere();
   
   static MessageLoggerInstance* instance_;
   MessageLoggerInstance();
-  void create();
 
   std::string cfgFile_;
   
 };
 
-void configurationFile( const std::string& filename ) { cfgFile_ = filename; }
+void MessageLoggerInstance::configurationFile( const std::string& filename ) { cfgFile_ = filename; }
+
