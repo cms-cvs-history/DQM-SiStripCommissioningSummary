@@ -10,7 +10,10 @@ MessageLoggerInstance* MessageLoggerInstance::instance_ = 0;
 
 // -----------------------------------------------------------------------------
 // Private constructor
-MessageLoggerInstance::MessageLoggerInstance() {
+MessageLoggerInstance::MessageLoggerInstance() 
+  : cfgFile_("DQM/SiStripCommon/data/MessageLoggerInstance.cfg")
+  
+{
   cout << "[" << __PRETTY_FUNCTION__ << "]" << endl;
   instance_ = this;
   create();
@@ -88,12 +91,8 @@ void MessageLoggerInstance::create() {
     
     // Construct path to "MessageLogger.cfg" file
     stringstream filename; 
-    if ( getenv("CMSSW_BASE") != NULL ) { 
-      filename << getenv("CMSSW_BASE") << "/src/DQM/SiStripCommon/data/"; 
-    } else { 
-      filename << "./"; 
-    }
-    filename << "MessageLogger.cfg";
+    if ( getenv("CMSSW_BASE") != NULL ) { filename << getenv("CMSSW_BASE") << "/src/"; }
+    filename << cfgFile_;
     
     // Read a configuration from the "MessageLogger.cfg" file
     stringstream config;
