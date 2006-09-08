@@ -1,5 +1,5 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripOfflineClient.h"
-#include "DQM/SiStripCommissioningSummary/bin/stubs/MessageLoggerInstance.h"
+//#include "DQM/SiStripCommissioningSummary/bin/stubs/MessageLoggerInstance.h"
 #include <iostream>
 #include <string>
 
@@ -10,6 +10,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/MakeParameterSets.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include <exception>
 #include <sstream>
 #include <fstream>
@@ -47,21 +48,13 @@ int main( int argc, char* argv[] ) {
 	    << " top-level:   " << level << std::endl
 	    << std::endl;
 
-  // Use MessageLogger service
-  //std::auto_ptr<MessageLoggerInstance> ml( MessageLoggerInstance::instance() );
+  try { 
 
-  
-  // Run client
-  SiStripOfflineClient client( file, histo, type, level, gran );
-
-
-
-
-  try {
+    string cfgFile_("DQM/SiStripCommon/data/MessageLoggerInstance.cfg");
 
     // Instantiate the plug-in manager
     edm::AssertHandler ah;
-    
+  
     // Load the message service plug-in
     boost::shared_ptr<edm::Presence> ml_presence;
     ml_presence = boost::shared_ptr<edm::Presence>( edm::PresenceFactory::get()->
@@ -70,11 +63,9 @@ int main( int argc, char* argv[] ) {
     // Construct path to "MessageLogger.cfg" file
     stringstream filename; 
     if ( getenv("CMSSW_BASE") != NULL ) { 
-      filename << getenv("CMSSW_BASE") << "/src/DQM/SiStripCommon/data/"; 
-    } else { 
-      filename << "./"; 
+      filename << getenv("CMSSW_BASE") << "/src/"; 
     }
-    filename << "MessageLogger.cfg";
+    filename << cfgFile_;
     
     // Read a configuration from the "MessageLogger.cfg" file
     stringstream config;
@@ -111,10 +102,11 @@ int main( int argc, char* argv[] ) {
     
     // Make the services available
     edm::ServiceRegistry::Operate operate(tempToken);
+
+    // Run client
+    SiStripOfflineClient client( file, histo, type, level, gran );
     
   }
-  
-  // Catch any exceptions that may have been thrown
   catch ( cms::Exception& e ) {
     cout << "cms::Exception caught\n"
 	 << e.explainSelf();
@@ -130,10 +122,7 @@ int main( int argc, char* argv[] ) {
   catch (...) {
     cout << "Unknown exception caught";
   }
-
-  edm::LogInfo("Test") << "INFO TEST" << std::endl; 
-  LogDebug("Test") << "DEBUG TEST" << std::endl; 
-  edm::LogError("Test") << "ERROR TEST" << std::endl; 
   
   return 0;
+
 }
