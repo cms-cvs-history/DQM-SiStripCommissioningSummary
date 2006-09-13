@@ -27,18 +27,23 @@ using namespace std;
 int main( int argc, char* argv[] ) {
 
   // Default values for arguments
+  std::string cfg_file = "cfg.dat";
   std::string file = "client.root";
-  sistrip::SummaryHisto histo = sistrip::APV_TIMING_DELAY;
-  sistrip::SummaryType type = sistrip::SUMMARY_DISTR;
-  sistrip::Granularity gran = sistrip::MODULE;
+  sistrip::SummaryHisto histo = sistrip::UNKNOWN_SUMMARY_HISTO;
+  sistrip::SummaryType type = sistrip::UNKNOWN_SUMMARY_TYPE;
+  sistrip::Granularity gran = sistrip::UNKNOWN_GRANULARITY;
   std::string level  = "DQMData/SiStrip/";
   
+  // Read from file
+  // BLAH
+  
   // Read in args to main
-  if ( argc > 1 ) { file  = argv[1]; }
-  if ( argc > 2 ) { histo = static_cast<sistrip::SummaryHisto>( atoi( argv[2] ) ); }
-  if ( argc > 3 ) { type  = static_cast<sistrip::SummaryType>( atoi( argv[3] ) ); }
-  if ( argc > 4 ) { gran  = static_cast<sistrip::Granularity>( atoi( argv[4] ) ); }
-  if ( argc > 5 ) { level = argv[5]; }
+  if ( argc > 1 ) { cfg_file  = argv[1]; }
+  if ( argc > 2 ) { file  = argv[2]; }
+  if ( argc > 3 ) { histo = static_cast<sistrip::SummaryHisto>( atoi( argv[3] ) ); }
+  if ( argc > 4 ) { type  = static_cast<sistrip::SummaryType>( atoi( argv[4] ) ); }
+  if ( argc > 5 ) { gran  = static_cast<sistrip::Granularity>( atoi( argv[5] ) ); }
+  if ( argc > 6 ) { level = argv[6]; }
   
   std::cout << "OfflineClient:" << std::endl
 	    << " file:        " << file << std::endl
@@ -80,7 +85,7 @@ int main( int argc, char* argv[] ) {
       throw cms::Exception("FileNotFound") << ss.str();
     } else {
       //in >> config;
-      while ( !in.eof() ) { 	
+      while ( !in.eof() ) {
 	string data;
 	getline(in,data); 
 	config << data << "\n";
