@@ -180,7 +180,7 @@ void SiStripOfflineClient::apvTiming() {
   map<uint32_t,ApvTimingAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-    ApvTimingAnalysis anal;
+    ApvTimingAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
     stringstream ss;
@@ -206,7 +206,7 @@ void SiStripOfflineClient::fedTiming() {
   map<uint32_t,FedTimingAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-    FedTimingAnalysis anal;
+    FedTimingAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
     stringstream ss;
@@ -232,7 +232,7 @@ void SiStripOfflineClient::optoScan() {
   map<uint32_t,OptoScanAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-    OptoScanAnalysis anal;
+    OptoScanAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
     stringstream ss;
@@ -258,7 +258,7 @@ void SiStripOfflineClient::vpspScan() {
   map<uint32_t,VpspScanAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-    VpspScanAnalysis anal;
+    VpspScanAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
     stringstream ss;
@@ -284,7 +284,7 @@ void SiStripOfflineClient::pedestals() {
   map<uint32_t,PedestalsAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-    PedestalsAnalysis anal;
+    PedestalsAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
     stringstream ss;
