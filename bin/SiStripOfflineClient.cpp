@@ -1,5 +1,4 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripOfflineClient.h"
-//#include "DQM/SiStripCommissioningSummary/bin/stubs/MessageLoggerInstance.h"
 #include <iostream>
 #include <string>
 
@@ -27,31 +26,26 @@ using namespace std;
 int main( int argc, char* argv[] ) {
 
   // Default values for arguments
-  std::string cfg_file = "cfg.dat";
-  std::string file = "client.root";
+  string file = "client.root";
   sistrip::SummaryHisto histo = sistrip::UNKNOWN_SUMMARY_HISTO;
   sistrip::SummaryType type = sistrip::UNKNOWN_SUMMARY_TYPE;
-  sistrip::Granularity gran = sistrip::UNKNOWN_GRANULARITY;
-  std::string level  = "DQMData/SiStrip/";
-  
-  // Read from file
-  // BLAH
+  sistrip::Granularity gran = sistrip::UNKNOWN_GRAN;
+  string level  = "DQMData/SiStrip/";
   
   // Read in args to main
-  if ( argc > 1 ) { cfg_file  = argv[1]; }
-  if ( argc > 2 ) { file  = argv[2]; }
-  if ( argc > 3 ) { histo = static_cast<sistrip::SummaryHisto>( atoi( argv[3] ) ); }
-  if ( argc > 4 ) { type  = static_cast<sistrip::SummaryType>( atoi( argv[4] ) ); }
-  if ( argc > 5 ) { gran  = static_cast<sistrip::Granularity>( atoi( argv[5] ) ); }
-  if ( argc > 6 ) { level = argv[6]; }
+  if ( argc > 1 ) { file  = argv[1]; }
+  if ( argc > 2 ) { histo = static_cast<sistrip::SummaryHisto>( atoi( argv[2] ) ); }
+  if ( argc > 3 ) { type  = static_cast<sistrip::SummaryType>( atoi( argv[3] ) ); }
+  if ( argc > 4 ) { gran  = static_cast<sistrip::Granularity>( atoi( argv[4] ) ); }
+  if ( argc > 5 ) { level = argv[5]; }
   
-  std::cout << "OfflineClient:" << std::endl
-	    << " file:        " << file << std::endl
- 	    << " histo:       " << SiStripHistoNamingScheme::summaryHisto( histo ) << std::endl
- 	    << " type:        " << SiStripHistoNamingScheme::summaryType( type ) << std::endl
-	    << " granularity: " << SiStripHistoNamingScheme::granularity( gran ) << std::endl
-	    << " top-level:   " << level << std::endl
-	    << std::endl;
+  cout << "SiStripOfflineClient:" << endl
+	    << " file:        " << file << endl
+ 	    << " histo:       " << SiStripHistoNamingScheme::summaryHisto( histo ) << endl
+ 	    << " type:        " << SiStripHistoNamingScheme::summaryType( type ) << endl
+	    << " granularity: " << SiStripHistoNamingScheme::granularity( gran ) << endl
+	    << " top-level:   " << level << endl
+	    << endl;
 
   try { 
 
@@ -121,7 +115,7 @@ int main( int argc, char* argv[] ) {
 	 << e.explainSelf();
   }
   catch ( exception& e ) {
-    cout << "std::exception caught\n"
+    cout << "exception caught\n"
 	 << e.what();
   }
   catch (...) {
