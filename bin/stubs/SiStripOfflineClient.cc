@@ -113,7 +113,7 @@ void SiStripOfflineClient::fillHistoMap() {
   // Convert map (to use FEC key as index, rather than directory string)
   map< string, vector<TProfile*> >::iterator iter = histos.begin();
   for ( ; iter != histos.end(); iter++ ) {
-    cout << "Directory: " << iter->first << endl;
+    //cout << "Directory: " << iter->first << endl;
     uint32_t index = iter->first.find( sistrip::controlView_ );
     string control = iter->first.substr( index );
     SiStripHistoNamingScheme::ControlPath path = SiStripHistoNamingScheme::controlPath( control );
@@ -135,8 +135,8 @@ void SiStripOfflineClient::fillHistoMap() {
 					     path.ccuChan_,
 					     channel );
       map_[key].push_back(*ihis);
-      cout << "Key: 0x" << hex << setw(8) << setfill('0') << key << dec
-	   << "  Histo: " << (*ihis)->GetName() << endl;
+      //cout << "Key: 0x" << hex << setw(8) << setfill('0') << key << dec
+      //<< "  Histo: " << (*ihis)->GetName() << endl;
     }
   }
 
@@ -168,23 +168,88 @@ void SiStripOfflineClient::fedCabling() {
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
   
-  file_->addPath(level_)->cd();
-  summary->Write();
-  
+  if ( file_ && summary ) { 
+    file_->addPath(level_)->cd();
+    summary->Write();
+  }
+
 }
 
 //-----------------------------------------------------------------------------
 //
 void SiStripOfflineClient::apvTiming() {
   
+  // Reset minimum / maximum delays
+  float time_min =  1. * sistrip::invalid_;
+  float time_max = -1. * sistrip::invalid_;
+  uint32_t device_min = sistrip::invalid_;
+  uint32_t device_max = sistrip::invalid_;
+
   map<uint32_t,ApvTimingAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
+
+    // Perform histo analysis
     ApvTimingAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
+
+    // Check tick height is valid
+    if ( anal.height() < 100. ) { 
+      cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	   << " Tick mark height too small: " << anal.height() << endl;
+      continue; 
+    }
+    
+    // Check time of rising edge
+    if ( anal.time() > sistrip::maximum_ ) { continue; }
+    
+    // Find maximum time
+    if ( anal.time() > time_max ) { 
+      time_max = anal.time(); 
+      device_max = imap->first;
+    }
+    
+    // Find minimum time
+    if ( anal.time() < time_min ) { 
+      time_min = anal.time(); 
+      device_min = imap->first;
+    }
+
+  }
+  
+  // Adjust maximum (and minimum) delay(s) to find optimum sampling point(s)
+  if ( time_max > sistrip::maximum_ ||
+       time_max < -1.*sistrip::maximum_ ) { 
+    cerr << "[" << __PRETTY_FUNCTION__ << "]"
+	 << " Unable to set maximum time! Found unexpected value: "
+	 << time_max << endl;
+  } else {
+    SiStripControlKey::ControlPath max = SiStripControlKey::path( device_max );
+    cout << " Device (FEC/slot/ring/CCU/module/channel) " 
+	 << max.fecCrate_ << "/" 
+	 << max.fecSlot_ << "/" 
+	 << max.fecRing_ << "/" 
+	 << max.ccuAddr_ << "/"
+	 << max.ccuChan_ << "/"
+	 << " has maximum delay (rising edge) [ns]:" << time_max << endl;
+    
+    SiStripControlKey::ControlPath min = SiStripControlKey::path( device_min );
+    cout << " Device (FEC/slot/ring/CCU/module/channel): " 
+	 << min.fecCrate_ << "/" 
+	 << min.fecSlot_ << "/" 
+	 << min.fecRing_ << "/" 
+	 << min.ccuAddr_ << "/"
+	 << min.ccuChan_ << "/"
+	 << " has minimum delay (rising edge) [ns]:" << time_min << endl;
+  }
+  
+  // Set maximum time for all analysis objects
+  map<uint32_t,ApvTimingAnalysis>::iterator ianal = monitorables.begin();
+  for ( ; ianal != monitorables.end(); ianal++ ) { 
+    ianal->second.maxTime( time_max ); 
     stringstream ss;
-    anal.print( ss ); 
+    ianal->second.print( ss ); 
     cout << ss.str() << endl;
   }
   
@@ -194,8 +259,10 @@ void SiStripOfflineClient::apvTiming() {
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
   
-  file_->addPath(level_)->cd();
-  summary->Write();
+  if ( file_ && summary ) { 
+    file_->addPath(level_)->cd();
+    summary->Write();
+  }
   
 }
 
@@ -220,9 +287,11 @@ void SiStripOfflineClient::fedTiming() {
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
   
-  file_->addPath(level_)->cd();
-  summary->Write();
-  
+  if ( file_ && summary ) { 
+    file_->addPath(level_)->cd();
+    summary->Write();
+  }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -246,8 +315,10 @@ void SiStripOfflineClient::optoScan() {
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
   
-  file_->addPath(level_)->cd();
-  summary->Write();
+  if ( file_ && summary ) { 
+    file_->addPath(level_)->cd();
+    summary->Write();
+  }
   
 }
 
@@ -272,8 +343,10 @@ void SiStripOfflineClient::vpspScan() {
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
   
-  file_->addPath(level_)->cd();
-  summary->Write();
+  if ( file_ && summary ) { 
+    file_->addPath(level_)->cd();
+    summary->Write();
+  }
   
 }
 
@@ -298,8 +371,10 @@ void SiStripOfflineClient::pedestals() {
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
   
-  file_->addPath(level_)->cd();
-  summary->Write();
-  
+  if ( file_ && summary ) { 
+    file_->addPath(level_)->cd();
+    summary->Write();
+  }
+
 }
 
