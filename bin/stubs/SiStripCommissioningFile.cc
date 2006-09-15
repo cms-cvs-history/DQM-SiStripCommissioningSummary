@@ -47,7 +47,7 @@ TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::
    //TString defining commissioning task
    stringstream task_label;
    task_label << sistrip::commissioningTask_ << sistrip::sep_ << SiStripHistoNamingScheme::task(task_);
-   TNamed task_description(task_label.str().c_str(),SiStripHistoNamingScheme::task(task_).c_str());
+   TNamed task_description(task_label.str().c_str(),string("s="+SiStripHistoNamingScheme::task(task_)).c_str());
    sistripTop_->WriteTObject(&task_description);
 }
 
