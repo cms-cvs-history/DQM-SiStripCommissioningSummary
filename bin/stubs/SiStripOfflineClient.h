@@ -62,6 +62,9 @@ class SiStripOfflineClient {
   
   /** Top-level directory for summary histogram. */
   std::string level_;
+
+  /** */
+  std::string path_;
   
   /** Granularity for summary histogram. */
   sistrip::Granularity gran_;

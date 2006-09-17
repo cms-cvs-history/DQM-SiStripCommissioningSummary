@@ -30,7 +30,7 @@ int main( int argc, char* argv[] ) {
   sistrip::SummaryHisto histo = sistrip::UNKNOWN_SUMMARY_HISTO;
   sistrip::SummaryType type = sistrip::UNKNOWN_SUMMARY_TYPE;
   sistrip::Granularity gran = sistrip::UNKNOWN_GRAN;
-  string level  = "DQMData/SiStrip/";
+  string level  = "FecCrate0";
   
   // Read in args to main
   if ( argc > 1 ) { file  = argv[1]; }

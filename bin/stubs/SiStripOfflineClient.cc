@@ -37,6 +37,7 @@ SiStripOfflineClient::SiStripOfflineClient( const string& filename,
     histo_(histo),
     type_(type),
     level_(top_level_dir),
+    path_(""),
     gran_(gran),
     file_(0),
     run_(0),
@@ -47,9 +48,11 @@ SiStripOfflineClient::SiStripOfflineClient( const string& filename,
   file_ = new SiStripCommissioningFile( filename_.c_str() );
   task_ = file_->Task(); 
   view_ = file_->View(); 
+  path_ = "DQMData/SiStrip/" + SiStripHistoNamingScheme::view( view_ ) + "/" + level_;
   cout << "In file: " << filename_ << endl
        << " commissioning task: " << SiStripHistoNamingScheme::task( task_ ) << endl
-       << " logical view:       " << SiStripHistoNamingScheme::view( view_ ) << endl;
+       << " logical view:       " << SiStripHistoNamingScheme::view( view_ ) << endl
+       << " directory path:     " << path_ << endl;
   
   if ( !file_->queryDQMFormat() ) { 
     cout << "[" << __PRETTY_FUNCTION__ << "]"
@@ -69,7 +72,7 @@ SiStripOfflineClient::SiStripOfflineClient( const string& filename,
 	 << SiStripHistoNamingScheme::view( view_ ) 
 	 << endl;
   }
-  
+
   map_.clear();
   setRunNumber();
   analysis();
@@ -169,7 +172,7 @@ void SiStripOfflineClient::fedCabling() {
   factory.fill( *summary );
   
   if ( file_ && summary ) { 
-    file_->addPath(level_)->cd();
+    file_->addPath(path_)->cd();
     summary->Write();
   }
 
@@ -260,7 +263,7 @@ void SiStripOfflineClient::apvTiming() {
   factory.fill( *summary );
   
   if ( file_ && summary ) { 
-    file_->addPath(level_)->cd();
+    file_->addPath(path_)->cd();
     summary->Write();
   }
   
@@ -288,7 +291,7 @@ void SiStripOfflineClient::fedTiming() {
   factory.fill( *summary );
   
   if ( file_ && summary ) { 
-    file_->addPath(level_)->cd();
+    file_->addPath(path_)->cd();
     summary->Write();
   }
 
@@ -316,7 +319,7 @@ void SiStripOfflineClient::optoScan() {
   factory.fill( *summary );
   
   if ( file_ && summary ) { 
-    file_->addPath(level_)->cd();
+    file_->addPath(path_)->cd();
     summary->Write();
   }
   
@@ -344,7 +347,7 @@ void SiStripOfflineClient::vpspScan() {
   factory.fill( *summary );
   
   if ( file_ && summary ) { 
-    file_->addPath(level_)->cd();
+    file_->addPath(path_)->cd();
     summary->Write();
   }
   
@@ -372,7 +375,7 @@ void SiStripOfflineClient::pedestals() {
   factory.fill( *summary );
   
   if ( file_ && summary ) { 
-    file_->addPath(level_)->cd();
+    file_->addPath(path_)->cd();
     summary->Write();
   }
 
