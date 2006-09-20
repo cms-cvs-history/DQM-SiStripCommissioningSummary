@@ -1,0 +1,8 @@
+######WARNING: NO WHITESPACE ALLOWED
+######
+
+ClientFile=client.root
+SummaryLevel=ControlView/FecCrate0/
+SummaryHisto=OptoScanLldBias
+SummaryType=Summary2D
+SummaryGran=LldChan
