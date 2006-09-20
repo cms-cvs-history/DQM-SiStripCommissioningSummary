@@ -20,7 +20,14 @@ CXXFLAGS := $(patsubst -O2,,$(CXXFLAGS))
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
 
-<bin name=ConvertTBMonitorHistos file=ConvertTBMonitorHistos.cpp>
+<bin name=SiStripTBMonitorToClientConvert file=SiStripTBMonitorToClientConvert.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
+
+#<bin name=SiStripTBHtmlSummary file=SiStripTBHtmlSummary.cpp>
+#</bin>
+
+<bin name=SiStripCompareSummaryHistos file=SiStripCompareSummaryHistos.cpp>
+</bin>
+
 
