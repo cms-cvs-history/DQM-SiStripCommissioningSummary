@@ -48,7 +48,7 @@ SiStripOfflineClient::SiStripOfflineClient( const string& filename,
   file_ = new SiStripCommissioningFile( filename_.c_str() );
   task_ = file_->Task(); 
   view_ = file_->View(); 
-  path_ = "DQMData/SiStrip/" + SiStripHistoNamingScheme::view( view_ ) + "/" + level_;
+  path_ = "DQMData/SiStrip/" /*+ SiStripHistoNamingScheme::view( view_ ) + "/"*/ + level_;
   cout << "In file: " << filename_ << endl
        << " commissioning task: " << SiStripHistoNamingScheme::task( task_ ) << endl
        << " logical view:       " << SiStripHistoNamingScheme::view( view_ ) << endl
@@ -131,6 +131,7 @@ void SiStripOfflineClient::fillHistoMap() {
     for ( ; ihis != iter->second.end(); ihis++ ) {
       SiStripHistoNamingScheme::HistoTitle title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
       uint16_t channel = ( title.granularity_ == sistrip::APV ) ? (title.channel_-32)/2 : title.channel_;
+
       uint32_t key = SiStripControlKey::key( path.fecCrate_, 
 					     path.fecSlot_, 
 					     path.fecRing_, 
@@ -261,7 +262,6 @@ void SiStripOfflineClient::apvTiming() {
   uint32_t xbins = factory.extract( monitorables );
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
-  
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
@@ -373,7 +373,7 @@ void SiStripOfflineClient::pedestals() {
   uint32_t xbins = factory.extract( monitorables );
   TH1* summary = SummaryGenerator::histogram( type_, xbins );
   factory.fill( *summary );
-  
+
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
