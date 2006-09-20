@@ -1,0 +1,6 @@
+######WARNING: NO WHITESPACE ALLOWED
+######
+
+Summary1=HtmlSummary.root:/RootAnalyzer_Minimalbias
+Summary2=client.root:/DQMData/SiStrip/ControlView/FecCrate0/Summary2D_OptoScan_ControlView_OptoScanLldBias;1
+
