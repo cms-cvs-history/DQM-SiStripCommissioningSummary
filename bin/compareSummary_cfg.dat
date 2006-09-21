@@ -1,6 +1,14 @@
-######WARNING: NO WHITESPACE ALLOWED
-######
 
-Summary1=HtmlSummary.root:/RootAnalyzer_Minimalbias
-Summary2=client.root:/DQMData/SiStrip/ControlView/FecCrate0/Summary2D_OptoScan_ControlView_OptoScanLldBias;1
+####
+### Configuration of SiStripCompareSummaryHistos
+####
+
+ ##########################
+ #Paths of two summary histograms to be compared.
+ #Paths of the form: file.root:/dir1/dir2/histoname
+ #Summary1 had the difference of the two written to its top directory.
+ ##########################
+
+Summary1=
+Summary2=
 

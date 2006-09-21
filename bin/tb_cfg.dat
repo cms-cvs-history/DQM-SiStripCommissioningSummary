@@ -1,7 +1,30 @@
-######WARNING: NO WHITESPACE ALLOWED
-######
 
-TBFile=TBMonitor0020818_000.root
+####
+### Configuration of SiStripTBMonitorToClientConvert
+####
+
+ ##########################
+ #TBMonitor root-file path
+ ##########################
+
+TBFile=TBMonitor0030349_000.root
+
+ ##########################
+ #Client (output) root-file path
+ ##########################
+
 ClientFile=client.root
-CommissioningTask=OptoScan
+
+ ##########################
+ #Commissioning Task. Choose between:
+ ##FedCabling
+ ##ApvTiming
+ ##FedTiming
+ ##OptoScan
+ ##VpspScan
+ ##Pedestals
+ ##ApvLatency
+ ##########################
+
+CommissioningTask=Pedestals
 

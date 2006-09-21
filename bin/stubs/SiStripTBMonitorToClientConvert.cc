@@ -27,6 +27,8 @@ SiStripTBMonitorToClientConvert::SiStripTBMonitorToClientConvert(string& tb_path
 { 
   //Check Commissioning Task
   if (task_ == sistrip::UNKNOWN_TASK) cout << "Unknown commissioning task. Value used: " << task << "; values accepted: Pedestals, ApvTiming, FedTiming, OptoScan, VpspScan, ApvLatency." << endl;
+
+  if (task_ == sistrip::UNDEFINED_TASK) cout << "Undefined commissioning task. Value used: " << task << "; values accepted: Pedestals, ApvTiming, FedTiming, OptoScan, VpspScan, ApvLatency." << endl;
   
   setRunInfo();
   taskId_ = taskId(task_);

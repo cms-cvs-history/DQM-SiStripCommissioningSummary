@@ -130,7 +130,7 @@ void SiStripOfflineClient::fillHistoMap() {
     vector<TProfile*>::iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
       SiStripHistoNamingScheme::HistoTitle title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
-      uint16_t channel = ( title.granularity_ == sistrip::APV ) ? (title.channel_-32)/2 : title.channel_;
+      uint16_t channel = ( (title.granularity_ == sistrip::APV) && (title.channel_ >= 32) ) ? (title.channel_-32)/2 : title.channel_;
 
       uint32_t key = SiStripControlKey::key( path.fecCrate_, 
 					     path.fecSlot_, 
@@ -175,6 +175,7 @@ void SiStripOfflineClient::fedCabling() {
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
+    delete summary;
   }
 
 }
@@ -265,6 +266,7 @@ void SiStripOfflineClient::apvTiming() {
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
+    delete summary;
   }
   
 }
@@ -293,6 +295,7 @@ void SiStripOfflineClient::fedTiming() {
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
+    delete summary;
   }
 
 }
@@ -321,6 +324,7 @@ void SiStripOfflineClient::optoScan() {
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
+    delete summary;
   }
   
 }
@@ -349,6 +353,7 @@ void SiStripOfflineClient::vpspScan() {
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
+    delete summary;
   }
   
 }
@@ -377,6 +382,7 @@ void SiStripOfflineClient::pedestals() {
   if ( file_ && summary ) { 
     file_->addPath(path_)->cd();
     summary->Write();
+    delete summary;
   }
 
 }

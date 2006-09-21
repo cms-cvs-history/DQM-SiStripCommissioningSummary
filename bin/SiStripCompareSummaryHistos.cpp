@@ -26,16 +26,16 @@ TH1F compare(TH2F* h1, TH2F* h2) {
   map<string, pair<Float_t, Float_t> > labels; 
   
   //fill map with h1 (mean of points per bin)
-  Int_t ibin,ibiny,ipoint;
-  Float_t mean;
+  Int_t ibin,ibiny;
+  Float_t mean, weight;
 
   for(ibin=0; ibin<h1->GetNbinsX(); ibin++) {
     mean = 0.;
-    ipoint = 0;
+    weight = 0.;
     for ( ibiny = 0; ibiny < h1->GetNbinsY(); ibiny++) {
       if ((Int_t)h1->GetBinContent(ibin+1,ibiny+1)) {
-	mean+=ibiny;ipoint++;}} 
-    if (ipoint) {mean = mean/(Float_t)ipoint;}
+	mean+=((h1->GetYaxis()->GetBinLowEdge(ibiny+1))*h1->GetBinContent(ibin+1,ibiny+1));weight+=h1->GetBinContent(ibin+1,ibiny+1);}} 
+    if (weight) {mean = mean/weight;}
     string label(h1->GetXaxis()->GetBinLabel(ibin+1));
     labels[label] = pair<Float_t, Float_t>(mean, 9999.); 
   }
@@ -43,11 +43,11 @@ TH1F compare(TH2F* h1, TH2F* h2) {
   //fill map with h2
   for(ibin=0; ibin<h2->GetNbinsX(); ibin++) {
     mean = 0.;
-    ipoint = 0;
+    weight = 0.;
     for ( ibiny = 0; ibiny < h2->GetNbinsY(); ibiny++) {
       if ((Int_t)h2->GetBinContent(ibin+1,ibiny+1)) {
-	mean+=ibiny;ipoint++;}} 
-    if (ipoint){mean = mean/(Float_t)ipoint;}
+	mean+=((h2->GetYaxis()->GetBinLowEdge(ibiny+1))*h2->GetBinContent(ibin+1,ibiny+1));weight+=h2->GetBinContent(ibin+1,ibiny+1);}} 
+    if (weight){mean = mean/weight;}
     string label(h2->GetXaxis()->GetBinLabel(ibin+1));
     if (labels.find(label) != labels.end()) {
       labels[label].second = mean;}
@@ -68,9 +68,9 @@ TH1F compare(TH2F* h1, TH2F* h2) {
     
   string s1=h1->GetTitle();
   string s2=h2->GetTitle();
-  string s="Validation_" + s1 +"_" + s2 ;
+  string s=s1 +"_MINUS_" + s2 ;
   const char* c=s.c_str();
-  TH1F h("h", c , nbins, 0., (Float_t)nbins);
+  TH1F h(c, c, nbins, 0., (Float_t)nbins);
 
   //fill histogram with the difference
   iter=labels.begin();
@@ -117,9 +117,23 @@ TH1F compare(TH2F* h1, TH2F* h2) {
 	string data;
 	getline(in,data); 
 
+	//ignore string after # symbol
+	string::size_type pos = 0;
+	while (pos != string::npos) {
+	  pos = data.find("#",pos);
+	  if (pos !=string::npos) {data.erase(pos,(data.size()-pos));}
+	}
+
+	//remove whitespace
+	pos = 0;
+	while (pos != string::npos) {
+	  pos = data.find(" ",pos);
+	  if (pos !=string::npos) {data.erase(pos,1);}
+	}
+
 	//interpret data here....
 
-	string::size_type pos = data.find("Summary1=",0);
+	pos = data.find("Summary1=",0);
 	if (pos != string::npos) {
 	  pos+=9;
 	  summary_filename1 = string(data,pos,(data.find(":/",pos)-pos));

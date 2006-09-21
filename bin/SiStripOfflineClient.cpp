@@ -52,9 +52,23 @@ int main( int argc, char* argv[] ) {
 	string data;
 	getline(in,data); 
 
+	//ignore string after # symbol
+	string::size_type pos = 0;
+	while (pos != string::npos) {
+	  pos = data.find("#",pos);
+	  if (pos !=string::npos) {data.erase(pos,(data.size()-pos));}
+	}
+
+	//remove whitespace
+	pos = 0;
+	while (pos != string::npos) {
+	  pos = data.find(" ",pos);
+	  if (pos !=string::npos) {data.erase(pos,1);}
+	}
+
 	//interpret data here....
 
-	string::size_type pos = data.find("ClientFile=",0);
+	pos = data.find("ClientFile=",0);
 	if (pos != string::npos) {
 	  file = data.substr(pos+11);}
 
@@ -119,6 +133,8 @@ int main( int argc, char* argv[] ) {
 	    histo = sistrip::VPSP_SCAN_APV0;}
 	  else if (summaryhisto == sistrip::vpspScanApv1_) {
 	    histo = sistrip::VPSP_SCAN_APV1;}
+	  else if (summaryhisto == sistrip::pedestalsAllStrips_) {
+	    histo = sistrip::PEDESTALS_ALL_STRIPS;}
 	  else if (summaryhisto == sistrip::pedestalsMean_) {
 	    histo = sistrip::PEDESTALS_MEAN;}
 	  else if (summaryhisto == sistrip::pedestalsSpread_) {
@@ -127,6 +143,8 @@ int main( int argc, char* argv[] ) {
 	    histo = sistrip::PEDESTALS_MAX;}
 	  else if (summaryhisto == sistrip::pedestalsMin_) {
 	    histo = sistrip::PEDESTALS_MIN;}
+	  else if (summaryhisto == sistrip::noiseAllStrips_) {
+	    histo = sistrip::NOISE_ALL_STRIPS;}
 	  else if (summaryhisto == sistrip::noiseMean_) {
 	    histo = sistrip::NOISE_MEAN;}
 	  else if (summaryhisto == sistrip::noiseSpread_) {
@@ -157,11 +175,15 @@ int main( int argc, char* argv[] ) {
 	pos = data.find("SummaryGran=",0);
 	if (pos != string::npos) {
 	  string granularity = data.substr(pos+12);
-	  if (granularity == sistrip::tracker_) {
-	    gran = sistrip::TRACKER;}
-	  else if (granularity == sistrip::partition_) {
-	    gran = sistrip::PARTITION;}
-	  else if (granularity == sistrip::module_) {
+	  if (granularity == sistrip::fecCrate_) {
+	    gran = sistrip::FEC_CRATE;}
+	  else if (granularity == sistrip::fecSlot_) {
+	    gran = sistrip::FEC_SLOT;}
+	  else if (granularity == sistrip::fecRing_) {
+	    gran = sistrip::FEC_RING;}
+	  else if (granularity == sistrip::ccuAddr_) {
+	    gran = sistrip::CCU_ADDR;}
+	  else if (granularity == sistrip::ccuChan_) {
 	    gran = sistrip::CCU_CHAN;}
 	  else if (granularity == sistrip::lldChan_) {
 	    gran = sistrip::LLD_CHAN;}

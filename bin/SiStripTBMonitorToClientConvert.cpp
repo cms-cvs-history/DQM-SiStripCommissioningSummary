@@ -29,8 +29,8 @@ int main( int argc, char* argv[]) {
   // Default vaalues for arguments
 
   std::string cfg_file = "convert_cfg.dat";
-  std::string tbmonitor_file = "tb.root";
-  std::string client_file = "client.root";
+  std::string tbmonitor_file = "";
+  std::string client_file = "";
   sistrip::Task task = sistrip::UNKNOWN_TASK;
 
  // Read in arguments to main
@@ -51,9 +51,23 @@ int main( int argc, char* argv[]) {
 	string data;
 	getline(in,data); 
 
+	//ignore string after # symbol
+	string::size_type pos = 0;
+	while (pos != string::npos) {
+	  pos = data.find("#",pos);
+	  if (pos !=string::npos) {data.erase(pos,(data.size()-pos));}
+	}
+
+	//remove whitespace
+	pos = 0;
+	while (pos != string::npos) {
+	  pos = data.find(" ",pos);
+	  if (pos !=string::npos) {data.erase(pos,1);}
+	}
+
 	//interpret data here....
 
-	string::size_type pos = data.find("TBFile=",0);
+	pos = data.find("TBFile=",0);
 	if (pos != string::npos) {
 	  tbmonitor_file = data.substr(pos+7);}
 
@@ -66,6 +80,8 @@ int main( int argc, char* argv[]) {
 	  string commissioningtask = data.substr(pos+18);
 	  if (commissioningtask == sistrip::undefinedTask_) {
 	    task = sistrip::UNDEFINED_TASK;}
+	  else if (commissioningtask == sistrip::unknownTask_) {
+	    task = sistrip::UNKNOWN_TASK;}
 	  else if (commissioningtask == sistrip::fedCabling_) {
 	    task = sistrip::FED_CABLING;}
 	  else if (commissioningtask == sistrip::apvTiming_) {
