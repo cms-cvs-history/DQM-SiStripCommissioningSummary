@@ -1,6 +1,5 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripOfflineClient.h"
-#include <iostream>
-#include <string>
+#include "DQM/SiStripCommissioningSummary/bin/stubs/ConfigParser.h"
 
 #include "FWCore/Utilities/interface/Exception.h"
 #include "FWCore/Utilities/interface/ProblemTracker.h"
@@ -13,6 +12,7 @@
 #include <exception>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -25,188 +25,21 @@ using namespace std;
 */
 int main( int argc, char* argv[] ) {
 
-  // Default values for arguments
+  // Define summary definition containers
 
-  std::string cfg_file = "client_cfg.dat";
-  std::string file = "client.root";
-  std::string level  = "ControlView";
-  sistrip::SummaryHisto histo = sistrip::UNKNOWN_SUMMARY_HISTO;
-  sistrip::SummaryType type = sistrip::UNKNOWN_SUMMARY_TYPE;
-  sistrip::Granularity gran = sistrip::UNKNOWN_GRAN;
+  vector<string> client_files;
+  vector<ConfigParser::SummaryInfo> info;
+  ConfigParser::SummaryInfo summaryInfo;
   
-  // Read in arguments to main
+  // Read in config file if present
 
   if ( argc > 1 ) { 
-    cfg_file  = argv[1]; 
+    std::string cfg_file = cfg_file  = argv[1]; 
     cout << "Reading config. file: " << cfg_file << endl;
-    ifstream in;
-    in.open( cfg_file.c_str() );
-    if( !in ) {
-      stringstream ss;
-      ss  << "[" << __PRETTY_FUNCTION__ << "]"
-	  << " File could not be opened at '" 
-	  << cfg_file << "'";
-      cerr << ss.str() << endl;
-    } else {
-      while ( !in.eof() ) {
-	string data;
-	getline(in,data); 
+    client_files.clear();info.clear();
 
-	//ignore string after # symbol
-	string::size_type pos = 0;
-	while (pos != string::npos) {
-	  pos = data.find("#",pos);
-	  if (pos !=string::npos) {data.erase(pos,(data.size()-pos));}
-	}
-
-	//remove whitespace
-	pos = 0;
-	while (pos != string::npos) {
-	  pos = data.find(" ",pos);
-	  if (pos !=string::npos) {data.erase(pos,1);}
-	}
-
-	//interpret data here....
-
-	pos = data.find("ClientFile=",0);
-	if (pos != string::npos) {
-	  file = data.substr(pos+11);}
-
-	pos = data.find("SummaryLevel=",0);
-	if (pos != string::npos) {
-	  level = data.substr(pos+13);}
-	
-	pos = data.find("SummaryHisto=",0);
-	if (pos != string::npos) {
-	  string summaryhisto = data.substr(pos+13);
-	  if (summaryhisto == sistrip::undefinedSummaryHisto_) {
-	    histo = sistrip::UNDEFINED_SUMMARY_HISTO;}
-	  else if (summaryhisto == sistrip::undefinedSummaryHisto_) {
-	    histo = sistrip::UNDEFINED_SUMMARY_HISTO;}
-	  else if (summaryhisto == sistrip::apvTimingTime_) {
-	    histo = sistrip::APV_TIMING_TIME;}
-	  else if (summaryhisto == sistrip::apvTimingMax_) {
-	    histo = sistrip::APV_TIMING_MAX_TIME;}
-	  else if (summaryhisto == sistrip::apvTimingDelay_) {
-	    histo = sistrip::APV_TIMING_DELAY;}
-	  else if (summaryhisto == sistrip::apvTimingError_) {
-	    histo = sistrip::APV_TIMING_ERROR;}
-	  else if (summaryhisto == sistrip::apvTimingBase_) {
-	    histo = sistrip::APV_TIMING_BASE;}
-	  else if (summaryhisto == sistrip::apvTimingPeak_) {
-	    histo = sistrip::APV_TIMING_PEAK;}
-	  else if (summaryhisto == sistrip::apvTimingHeight_) {
-	    histo = sistrip::APV_TIMING_HEIGHT;}
-	  else if (summaryhisto == sistrip::fedTimingTime_) {
-	    histo = sistrip::FED_TIMING_TIME;}
-	  else if (summaryhisto == sistrip::fedTimingMax_) {
-	    histo = sistrip::FED_TIMING_MAX_TIME;}
-	  else if (summaryhisto == sistrip::fedTimingDelay_) {
-	    histo = sistrip::FED_TIMING_DELAY;}
-	  else if (summaryhisto == sistrip::fedTimingError_) {
-	    histo = sistrip::FED_TIMING_ERROR;}
-	  else if (summaryhisto == sistrip::fedTimingBase_) {
-	    histo = sistrip::FED_TIMING_BASE;}
-	  else if (summaryhisto == sistrip::fedTimingPeak_) {
-	    histo = sistrip::FED_TIMING_PEAK;}
-	  else if (summaryhisto == sistrip::fedTimingHeight_) {
-	    histo = sistrip::FED_TIMING_HEIGHT;}
-	  else if (summaryhisto == sistrip::optoScanLldBias_) {
-	    histo = sistrip::OPTO_SCAN_LLD_BIAS_SETTING;}
-	  else if (summaryhisto == sistrip::optoScanLldGain_) {
-	    histo = sistrip::OPTO_SCAN_LLD_GAIN_SETTING;}
-	  else if (summaryhisto == sistrip::optoScanMeasGain_) {
-	    histo = sistrip::OPTO_SCAN_MEASURED_GAIN;}
-	  else if (summaryhisto == sistrip::optoScanZeroLight_) {
-	    histo = sistrip::OPTO_SCAN_ZERO_LIGHT_LEVEL;}
-	  else if (summaryhisto == sistrip::optoScanLinkNoise_) {
-	    histo = sistrip::OPTO_SCAN_LINK_NOISE;}
-	  else if (summaryhisto == sistrip::optoScanBaseLiftOff_) {
-	    histo = sistrip::OPTO_SCAN_BASELINE_LIFT_OFF;}
-	  else if (summaryhisto == sistrip::optoScanLaserThresh_) {
-	    histo = sistrip::OPTO_SCAN_LASER_THRESHOLD;}
-	  else if (summaryhisto == sistrip::optoScanTickHeight_) {
-	    histo = sistrip::OPTO_SCAN_TICK_HEIGHT;}
-	  else if (summaryhisto == sistrip::vpspScanBothApvs_) {
-	    histo = sistrip::VPSP_SCAN_BOTH_APVS;}
-	  else if (summaryhisto == sistrip::vpspScanApv0_) {
-	    histo = sistrip::VPSP_SCAN_APV0;}
-	  else if (summaryhisto == sistrip::vpspScanApv1_) {
-	    histo = sistrip::VPSP_SCAN_APV1;}
-	  else if (summaryhisto == sistrip::pedestalsAllStrips_) {
-	    histo = sistrip::PEDESTALS_ALL_STRIPS;}
-	  else if (summaryhisto == sistrip::pedestalsMean_) {
-	    histo = sistrip::PEDESTALS_MEAN;}
-	  else if (summaryhisto == sistrip::pedestalsSpread_) {
-	    histo = sistrip::PEDESTALS_SPREAD;}
-	  else if (summaryhisto == sistrip::pedestalsMax_) {
-	    histo = sistrip::PEDESTALS_MAX;}
-	  else if (summaryhisto == sistrip::pedestalsMin_) {
-	    histo = sistrip::PEDESTALS_MIN;}
-	  else if (summaryhisto == sistrip::noiseAllStrips_) {
-	    histo = sistrip::NOISE_ALL_STRIPS;}
-	  else if (summaryhisto == sistrip::noiseMean_) {
-	    histo = sistrip::NOISE_MEAN;}
-	  else if (summaryhisto == sistrip::noiseSpread_) {
-	    histo = sistrip::NOISE_SPREAD;}
-	  else if (summaryhisto == sistrip::noiseMax_) {
-	    histo = sistrip::NOISE_MAX;}
-	  else if (summaryhisto == sistrip::noiseMin_) {
-	    histo = sistrip::NOISE_MIN;}
-	  else if (summaryhisto == sistrip::numOfDead_) {
-	    histo = sistrip::NUM_OF_DEAD;}
-	  else if (summaryhisto == sistrip::numOfNoisy_) {
-	    histo = sistrip::NUM_OF_NOISY;}}
-
-	pos = data.find("SummaryType=",0);
-	if (pos != string::npos) {
-	  string summarytype = data.substr(pos+12);
-	  if (summarytype == sistrip::undefinedSummaryType_) {
-	    type = sistrip::UNDEFINED_SUMMARY_TYPE;}
-	  else if (summarytype == sistrip::summaryDistr_) {
-	    type = sistrip::SUMMARY_DISTR;}
-	  else if (summarytype == sistrip::summary1D_) {
-	    type = sistrip::SUMMARY_1D;}
-	  else if (summarytype == sistrip::summary2D_) {
-	    type = sistrip::SUMMARY_2D;}
-	  else if (summarytype == sistrip::summaryProf_) {
-	    type = sistrip::SUMMARY_PROF;}}
-
-	pos = data.find("SummaryGran=",0);
-	if (pos != string::npos) {
-	  string granularity = data.substr(pos+12);
-	  if (granularity == sistrip::fecCrate_) {
-	    gran = sistrip::FEC_CRATE;}
-	  else if (granularity == sistrip::fecSlot_) {
-	    gran = sistrip::FEC_SLOT;}
-	  else if (granularity == sistrip::fecRing_) {
-	    gran = sistrip::FEC_RING;}
-	  else if (granularity == sistrip::ccuAddr_) {
-	    gran = sistrip::CCU_ADDR;}
-	  else if (granularity == sistrip::ccuChan_) {
-	    gran = sistrip::CCU_CHAN;}
-	  else if (granularity == sistrip::lldChan_) {
-	    gran = sistrip::LLD_CHAN;}
-	  else if (granularity == sistrip::apv_) {
-	    gran = sistrip::APV;}}
-      }
-      in.close();
-    }
-  }
-
-  if ( argc > 2 ) { file  = argv[2]; }
-  if ( argc > 3 ) { histo = static_cast<sistrip::SummaryHisto>( atoi( argv[3] ) ); }
-  if ( argc > 4 ) { type  = static_cast<sistrip::SummaryType>( atoi( argv[4] ) ); }
-  if ( argc > 5 ) { gran  = static_cast<sistrip::Granularity>( atoi( argv[5] ) ); }
-  if ( argc > 6 ) { level = argv[6]; }
-  
-  cout << "SiStripOfflineClient:" << endl
-	    << " file:        " << file << endl
- 	    << " histo:       " << SiStripHistoNamingScheme::summaryHisto( histo ) << endl
- 	    << " type:        " << SiStripHistoNamingScheme::summaryType( type ) << endl
-	    << " granularity: " << SiStripHistoNamingScheme::granularity( gran ) << endl
-	    << " top-level:   " << level << endl
-	    << endl;
+    ConfigParser cfg_info;
+    cfg_info.parseXML(cfg_file);
 
   try { 
 
@@ -262,11 +95,26 @@ int main( int argc, char* argv[] ) {
     
     // Make the services available
     edm::ServiceRegistry::Operate operate(tempToken);
+   
+    //Run offline client
+    cfg_info.getFileNames(client_files);
+    for (vector<string>::const_iterator ifile = client_files.begin(); ifile != client_files.end(); ifile++) {
+      info = cfg_info.getSummaryInfo(*ifile);
+      for (vector<ConfigParser::SummaryInfo>::const_iterator iinfo = info.begin(); iinfo != info.end(); iinfo++) {
+	
+    cout << "SiStripOfflineClient:" << endl
+	 << " file:        " << *ifile << endl
+	 << " histo:       " << SiStripHistoNamingScheme::summaryHisto( iinfo->histogram ) << endl
+	 << " type:        " << SiStripHistoNamingScheme::summaryType( iinfo->type ) << endl
+	 << " granularity: " << SiStripHistoNamingScheme::granularity( iinfo->granularity ) << endl
+	 << " top-level:   " << iinfo->level << endl
+	 << endl;
 
-    // Run client
-    SiStripOfflineClient client( file, histo, type, level, gran );
-    
+    SiStripOfflineClient client( *ifile, iinfo->histogram, iinfo->type, iinfo->level, iinfo->granularity );
+      }
+    }
   }
+  
   catch ( cms::Exception& e ) {
     cout << "cms::Exception caught\n"
 	 << e.explainSelf();
@@ -282,7 +130,10 @@ int main( int argc, char* argv[] ) {
   catch (...) {
     cout << "Unknown exception caught";
   }
-  
-  return 0;
+  }
 
+  else {cout << "Requires xml filename as argument" << endl;}
+
+  return 0;
+  
 }
