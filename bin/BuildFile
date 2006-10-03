@@ -2,6 +2,7 @@
 <use name=DQM/SiStripCommon>
 <use name=DQM/SiStripCommissioningAnalysis>
 <use name=DQM/SiStripCommissioningSummary>
+<use name=DQMServices/ClientConfig>
 <use name=boost>
 <use name=root>
 
@@ -24,10 +25,12 @@ CXXFLAGS := $(patsubst -O2,,$(CXXFLAGS))
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>
 
-#<bin name=SiStripTBHtmlSummary file=SiStripTBHtmlSummary.cpp>
-#</bin>
+<bin name=SiStripTBHtmlSummary file=SiStripTBHtmlSummary.cpp>
+<lib name=binDQMSiStripCommissioningSummary>
+</bin>
 
 <bin name=SiStripCompareSummaryHistos file=SiStripCompareSummaryHistos.cpp>
 </bin>
+
 
 
