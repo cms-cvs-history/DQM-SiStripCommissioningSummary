@@ -6,7 +6,7 @@
 #include <vector>
 
 //common
-#include "DQM/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
 
 //DQM/SiStripCommissioningSummary
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
@@ -45,7 +45,7 @@ class SiStripTBMonitorToClientConvert {
   static std::string taskId(sistrip::Task);
 
   /** Unpacks TBMonitor histogram name. */
-  SiStripHistoNamingScheme::HistoTitle histoTitle(const std::string&);
+  HistoTitle histoTitle(const std::string&);
   
  /** Splits Pedestals Profile on the module-level into 2 or 3 Profiles on the LLD-channel-level.*/
   void lldPedestals(TProfile& module, std::vector<TProfile>& llds); 

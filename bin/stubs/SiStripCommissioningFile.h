@@ -2,7 +2,7 @@
 #define DQM_SiStripCommissioningSummary_SiStripCommissioningFile_h
 
 //common
-#include "DQM/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
 
 //root
 #include "TFile.h"

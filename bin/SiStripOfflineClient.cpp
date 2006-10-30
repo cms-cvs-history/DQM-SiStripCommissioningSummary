@@ -101,16 +101,14 @@ int main( int argc, char* argv[] ) {
     for (vector<string>::const_iterator ifile = client_files.begin(); ifile != client_files.end(); ifile++) {
       info = cfg_info.getSummaryInfo(*ifile);
       for (vector<ConfigParser::SummaryInfo>::const_iterator iinfo = info.begin(); iinfo != info.end(); iinfo++) {
-	
-    cout << "SiStripOfflineClient:" << endl
-	 << " file:        " << *ifile << endl
-	 << " histo:       " << SiStripHistoNamingScheme::summaryHisto( iinfo->histogram ) << endl
-	 << " type:        " << SiStripHistoNamingScheme::summaryType( iinfo->type ) << endl
-	 << " granularity: " << SiStripHistoNamingScheme::granularity( iinfo->granularity ) << endl
-	 << " top-level:   " << iinfo->level << endl
-	 << endl;
-
-    SiStripOfflineClient client( *ifile, iinfo->histogram, iinfo->type, iinfo->level, iinfo->granularity );
+	cout << "SiStripOfflineClient:" << endl
+	     << " file:        " << *ifile << endl
+	     << " histo:       " << SiStripHistoNamingScheme::summaryHisto( iinfo->histogram ) << endl
+	     << " type:        " << SiStripHistoNamingScheme::summaryType( iinfo->type ) << endl
+	     << " granularity: " << SiStripHistoNamingScheme::granularity( iinfo->granularity ) << endl
+	     << " top-level:   " << iinfo->level << endl
+	     << endl;
+	SiStripOfflineClient client( *ifile, iinfo->histogram, iinfo->type, iinfo->level, iinfo->granularity );
       }
     }
   }

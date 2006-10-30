@@ -15,8 +15,8 @@
 #include "DQM/SiStripCommissioningSummary/interface/PedestalsSummaryFactory.h"
 // Misc
 #include "DQM/SiStripCommissioningSummary/interface/SummaryGenerator.h"
-#include "DQM/SiStripCommon/interface/SiStripHistoNamingScheme.h"
-#include "DataFormats/SiStripDetId/interface/SiStripControlKey.h"
+#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DataFormats/SiStripCommon/interface/SiStripFecKey.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -119,7 +119,7 @@ void SiStripOfflineClient::fillHistoMap() {
     //cout << "Directory: " << iter->first << endl;
     uint32_t index = iter->first.find( sistrip::controlView_ );
     string control = iter->first.substr( index );
-    SiStripHistoNamingScheme::ControlPath path = SiStripHistoNamingScheme::controlPath( control );
+    SiStripFecKey::Path path = SiStripHistoNamingScheme::controlPath( control );
     
     if ( path.fecCrate_ == sistrip::invalid_ ||
 	 path.fecSlot_ == sistrip::invalid_ ||
@@ -129,15 +129,15 @@ void SiStripOfflineClient::fillHistoMap() {
 	 
     vector<TProfile*>::iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
-      SiStripHistoNamingScheme::HistoTitle title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
+      HistoTitle title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
       uint16_t channel = ( (title.granularity_ == sistrip::APV) && (title.channel_ >= 32) ) ? (title.channel_-32)/2 : title.channel_;
 
-      uint32_t key = SiStripControlKey::key( path.fecCrate_, 
-					     path.fecSlot_, 
-					     path.fecRing_, 
-					     path.ccuAddr_, 
-					     path.ccuChan_,
-					     channel );
+      uint32_t key = SiStripFecKey::key( path.fecCrate_, 
+					 path.fecSlot_, 
+					 path.fecRing_, 
+					 path.ccuAddr_, 
+					 path.ccuChan_,
+					 channel );
       map_[key].push_back(*ihis);
       //cout << "Key: 0x" << hex << setw(8) << setfill('0') << key << dec
       //<< "  Histo: " << (*ihis)->GetName() << endl;
@@ -158,7 +158,7 @@ void SiStripOfflineClient::fedCabling() {
   map<uint32_t,FedCablingAnalysis> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-    FedCablingAnalysis anal;
+    FedCablingAnalysis anal( imap->first );
     anal.analysis( imap->second );
     monitorables[imap->first] = anal;
     stringstream ss;
@@ -230,7 +230,7 @@ void SiStripOfflineClient::apvTiming() {
 	 << " Unable to set maximum time! Found unexpected value: "
 	 << time_max << endl;
   } else {
-    SiStripControlKey::ControlPath max = SiStripControlKey::path( device_max );
+    SiStripFecKey::Path max = SiStripFecKey::path( device_max );
     cout << " Device (FEC/slot/ring/CCU/module/channel) " 
 	 << max.fecCrate_ << "/" 
 	 << max.fecSlot_ << "/" 
@@ -239,7 +239,7 @@ void SiStripOfflineClient::apvTiming() {
 	 << max.ccuChan_ << "/"
 	 << " has maximum delay (rising edge) [ns]:" << time_max << endl;
     
-    SiStripControlKey::ControlPath min = SiStripControlKey::path( device_min );
+    SiStripFecKey::Path min = SiStripFecKey::path( device_min );
     cout << " Device (FEC/slot/ring/CCU/module/channel): " 
 	 << min.fecCrate_ << "/" 
 	 << min.fecSlot_ << "/" 

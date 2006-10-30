@@ -14,8 +14,8 @@
 
 #include "DQMServices/ClientConfig/interface/DQMParserBase.h"
 #include "DQMServices/ClientConfig/interface/ParserFunctions.h"
-#include "DQM/SiStripCommon/interface/SiStripEnumeratedTypes.h"
-#include "DQM/SiStripCommon/interface/SiStripConstants.h"
+#include "DataFormats/SiStripCommon/interface/SiStripEnumeratedTypes.h"
+#include "DataFormats/SiStripCommon/interface/SiStripConstants.h"
 
 #include <iostream>
 #include <string>

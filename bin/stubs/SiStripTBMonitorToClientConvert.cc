@@ -2,7 +2,7 @@
 //common
 #include "DQM/SiStripCommon/interface/UpdateTProfile.h"
 //data formats
-#include "DataFormats/SiStripDetId/interface/SiStripControlKey.h"
+#include "DataFormats/SiStripCommon/interface/SiStripFecKey.h"
 
 #include <iostream> 
 #include <iomanip>
@@ -68,21 +68,21 @@ bool SiStripTBMonitorToClientConvert::convert() {
   for (map< string, vector<TProfile*> >::iterator ihistset = profile_map.begin(); ihistset != profile_map.end(); ihistset++) {
     for (vector<TProfile*>::iterator ihist = ihistset->second.begin(); ihist != ihistset->second.end(); ihist++) {
 
-    //look for "task id" in the histo title (quick check)
-    const string name((*ihist)->GetName());
-    if (name.find(taskId_) != std::string::npos) {
-      //extract histogram details from encoded histogram name.
-      SiStripHistoNamingScheme::HistoTitle h_title = histoTitle(name);
-      //update the profile name to the "standard format"
-      string newName = SiStripHistoNamingScheme::histoTitle(h_title.task_,h_title.contents_,h_title.keyType_,h_title.keyValue_,h_title.granularity_,h_title.channel_,h_title.extraInfo_);
-      (*ihist)->SetName(newName.c_str());
-      //add relevent directory for device if required
-      client_->addDevice(h_title.keyValue_);
-      //update map with reformatted profile using histo key (indicating control path) as the index
-      commissioning_map[h_title.keyValue_].reserve(6);
-      commissioning_map[h_title.keyValue_].push_back(**ihist);
+      //look for "task id" in the histo title (quick check)
+      const string name((*ihist)->GetName());
+      if (name.find(taskId_) != std::string::npos) {
+	//extract histogram details from encoded histogram name.
+	HistoTitle h_title = histoTitle(name);
+	//update the profile name to the "standard format"
+	string newName = SiStripHistoNamingScheme::histoTitle(h_title);
+	(*ihist)->SetName(newName.c_str());
+	//add relevent directory for device if required
+	client_->addDevice(h_title.keyValue_);
+	//update map with reformatted profile using histo key (indicating control path) as the index
+	commissioning_map[h_title.keyValue_].reserve(6);
+	commissioning_map[h_title.keyValue_].push_back(**ihist);
+      }
     }
-  }
   }
 
   //Loop commissioning map and:
@@ -90,46 +90,46 @@ bool SiStripTBMonitorToClientConvert::convert() {
   //2) Convert apv numbering scheme for 4-apv modules from 32,33,34,35 to 32,33,36,37. (only relevent for tasks conducted on the apv level).
   //3) Write final "client" profile histogram to file.
 
- for (map< unsigned int,vector<TProfile> >::iterator ihistset = commissioning_map.begin(); ihistset != commissioning_map.end(); ihistset++) {
+  for (map< unsigned int,vector<TProfile> >::iterator ihistset = commissioning_map.begin(); ihistset != commissioning_map.end(); ihistset++) {
 
-   //Change to relevent directory in output file for storage of "client histogram"
-    SiStripControlKey::ControlPath c_path = SiStripControlKey::path(ihistset->first);
-    string path = SiStripHistoNamingScheme::controlPath(c_path.fecCrate_, c_path.fecSlot_, c_path.fecRing_, c_path.ccuAddr_, c_path.ccuChan_);
+    //Change to relevent directory in output file for storage of "client histogram"
+    SiStripFecKey::Path c_path = SiStripFecKey::path(ihistset->first);
+    string path = SiStripHistoNamingScheme::controlPath(c_path);
     TDirectory* ccuChan = client_->dqmTop()->GetDirectory(path.c_str());
  
-     if ((task_ == sistrip::PEDESTALS) && (ihistset->second.size() == 2)) {
+    if ((task_ == sistrip::PEDESTALS) && (ihistset->second.size() == 2)) {
      
-       for (unsigned short ihisto = 0; ihisto < 2; ihisto++) {
+      for (unsigned short ihisto = 0; ihisto < 2; ihisto++) {
 
-       //split pedestals TProfile
-       vector<TProfile> lld_peds;
-       lldPedestals(ihistset->second[ihisto],lld_peds);
+	//split pedestals TProfile
+	vector<TProfile> lld_peds;
+	lldPedestals(ihistset->second[ihisto],lld_peds);
 
-       //update map
-       copy(lld_peds.begin(), lld_peds.end(), back_inserter(ihistset->second));
-       }
-       //remove old TProfiles
-       ihistset->second.erase(ihistset->second.begin(),ihistset->second.begin()+2);
-     }
+	//update map
+	copy(lld_peds.begin(), lld_peds.end(), back_inserter(ihistset->second));
+      }
+      //remove old TProfiles
+      ihistset->second.erase(ihistset->second.begin(),ihistset->second.begin()+2);
+    }
 
-   for (unsigned int iprof = 0; iprof < ihistset->second.size(); iprof++) {
-     if (ihistset->second.size() == 4) {
+    for (unsigned int iprof = 0; iprof < ihistset->second.size(); iprof++) {
+      if (ihistset->second.size() == 4) {
 
-    //unpack name
-     string name(ihistset->second[iprof].GetName());
-     SiStripHistoNamingScheme::HistoTitle h_title = SiStripHistoNamingScheme::histoTitle(name);
+	//unpack name
+	string name(ihistset->second[iprof].GetName());
+	HistoTitle h_title = SiStripHistoNamingScheme::histoTitle(name);
 
-       //fix channel numbers and granularity
-       if ((h_title.channel_ == 34) | (h_title.channel_ == 35)) {
-	 h_title.channel_ +=2; 
-	 h_title.granularity_ = sistrip::APV;
-	 const_cast<TProfile*>(&(ihistset->second[iprof]))->SetName(SiStripHistoNamingScheme::histoTitle(h_title.task_, h_title.contents_,h_title.keyType_, h_title.keyValue_, h_title.granularity_, h_title.channel_, h_title.extraInfo_).c_str());
-     }
-   }
-     //add client histogram to output file
-     ccuChan->WriteTObject(&ihistset->second[iprof]);
- }
-}
+	//fix channel numbers and granularity
+	if ((h_title.channel_ == 34) | (h_title.channel_ == 35)) {
+	  h_title.channel_ +=2; 
+	  h_title.granularity_ = sistrip::APV;
+	  const_cast<TProfile*>(&(ihistset->second[iprof]))->SetName(SiStripHistoNamingScheme::histoTitle(h_title).c_str());
+	}
+      }
+      //add client histogram to output file
+      ccuChan->WriteTObject(&ihistset->second[iprof]);
+    }
+  }
   return true;
 }
 
@@ -139,14 +139,14 @@ bool SiStripTBMonitorToClientConvert::convert() {
 void SiStripTBMonitorToClientConvert::setRunInfo() {
 
   //Get the run number from each file in list and compare...
-    unsigned int istart = tb_path_.find("TBMonitor");
-    unsigned int iend = tb_path_.find("_");
-    string run = ((istart != string::npos) && (iend != string::npos)) ? tb_path_.substr(istart+9,iend-istart-9) : string("0");
+  unsigned int istart = tb_path_.find("TBMonitor");
+  unsigned int iend = tb_path_.find("_");
+  string run = ((istart != string::npos) && (iend != string::npos)) ? tb_path_.substr(istart+9,iend-istart-9) : string("0");
  
-    cout << "[SiStripTBMonitorToClientConvert::setRunInfo]: Run number: " << run << endl;
+  cout << "[SiStripTBMonitorToClientConvert::setRunInfo]: Run number: " << run << endl;
   
   //set run number
-    run_ = atoi(run.c_str());
+  run_ = atoi(run.c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -171,18 +171,10 @@ std::string SiStripTBMonitorToClientConvert::taskId(sistrip::Task task) {
 
 //-----------------------------------------------------------------------------
 
-SiStripHistoNamingScheme::HistoTitle SiStripTBMonitorToClientConvert::histoTitle(const string& histo_name) {
+HistoTitle SiStripTBMonitorToClientConvert::histoTitle(const string& histo_name) {
   
   //initialise SiStripHistoNamingScheme::HistoTitle object
-  SiStripHistoNamingScheme::HistoTitle title;
-  
-  title.task_   = sistrip::UNKNOWN_TASK;
-  title.contents_   = sistrip::COMBINED;
-  title.keyType_     = sistrip::FEC_KEY;
-  title.keyValue_    = 0;
-  title.granularity_ = sistrip::UNKNOWN_GRAN;
-  title.channel_     = 0;
-  title.extraInfo_ = "";
+  HistoTitle title;
   
   //scan histogram name
 
@@ -216,7 +208,7 @@ SiStripHistoNamingScheme::HistoTitle SiStripTBMonitorToClientConvert::histoTitle
   }
 
   if (task_ ==sistrip::PEDESTALS) {
-  string label = histo_name.substr(0,start+1);
+    string label = histo_name.substr(0,start+1);
     if (label == "Profile_ped") title.extraInfo_ = sistrip::pedsAndRawNoise_;
     else if (label == "Profile_noi") title.extraInfo_ = sistrip::residualsAndNoise_;
   }
@@ -252,44 +244,52 @@ SiStripHistoNamingScheme::HistoTitle SiStripTBMonitorToClientConvert::histoTitle
   unsigned int idlocal;
   os >> hex >> idlocal;
 
-  SiStripControlKey::ControlPath path;
+  SiStripFecKey::Path path;
   path.channel_ = title.channel_ & 0x3;
   path.ccuChan_ =  idlocal & 0xFF;
   path.ccuAddr_ = (idlocal >> 8) & 0xFF;
   path.fecRing_ = (idlocal >> 16) & 0xF;
   path.fecSlot_ = (idlocal >> 20) & 0xF;
-  path.fecCrate_  = 0;
-  title.keyValue_ = SiStripControlKey::key(path.fecCrate_,path.fecSlot_,path.fecRing_,path.ccuAddr_,path.ccuChan_,path.channel_);//updates key to the format defined in DataFormats/SiStripDetId/interface/SiStripControlKey.h
+  path.fecCrate_ = 0;
+  title.keyValue_ = SiStripFecKey::key( path.fecCrate_,
+					path.fecSlot_,
+					path.fecRing_,
+					path.ccuAddr_,
+					path.ccuChan_,
+					path.channel_); //updates key to the format defined in DataFormats/SiStripDetId/interface/SiStripControlKey.h
 
   return title;
 }
 
 //-----------------------------------------------------------------------------
 
- void SiStripTBMonitorToClientConvert::lldPedestals(TProfile& module, vector<TProfile>& llds) {
+void SiStripTBMonitorToClientConvert::lldPedestals(TProfile& module, vector<TProfile>& llds) {
    
-   //unpack name
-   string name(module.GetName());
-   SiStripHistoNamingScheme::HistoTitle h_title = SiStripHistoNamingScheme::histoTitle(name);
+  //unpack name
+  string name(module.GetName());
+  HistoTitle h_title = SiStripHistoNamingScheme::histoTitle(name);
    
-   unsigned short numApvPairs = module.GetNbinsX()/256;
-   llds.reserve(numApvPairs);
+  unsigned short numApvPairs = module.GetNbinsX()/256;
+  llds.reserve(numApvPairs);
    
-   for (unsigned short ihisto = 0; ihisto < numApvPairs; ihisto++) {
+  for (unsigned short ihisto = 0; ihisto < numApvPairs; ihisto++) {
      
-     //get lld channel number
-     unsigned short illd = ((numApvPairs == 2) && (ihisto == 1)) ? illd = 2 : ihisto;
-     //create and format new TProfile
-     TProfile apvPeds;
-     apvPeds.SetBins(256, 0., 256.);
-     apvPeds.SetName(SiStripHistoNamingScheme::histoTitle(h_title.task_, h_title.contents_, h_title.keyType_, h_title.keyValue_, sistrip::LLD_CHAN, illd, h_title.extraInfo_).c_str());
-     //fill new TProfile
-     for (unsigned short ibin = 0; ibin < apvPeds.GetNbinsX(); ibin++) {
+    //get lld channel number
+    unsigned short illd = ((numApvPairs == 2) && (ihisto == 1)) ? illd = 2 : ihisto;
+    //create and format new TProfile
+    TProfile apvPeds;
+    apvPeds.SetBins(256, 0., 256.);
+    apvPeds.SetName(SiStripHistoNamingScheme::histoTitle(h_title).c_str());
+    //fill new TProfile
+    for (unsigned short ibin = 0; ibin < apvPeds.GetNbinsX(); ibin++) {
 
-       // Set values for a TProfile bin
-       UpdateTProfile::setBinContent(&apvPeds,(uint32_t)(ibin+1), (double)module.GetBinEntries((Int_t)(ihisto*256 + ibin + 1)), (double)module.GetBinContent((Int_t)(ihisto*256 + ibin + 1)), (double)module.GetBinError((Int_t)(ihisto*256 + ibin + 1)));
-     }
-     
-     //add new TProfile to llds vector
-     llds.push_back(apvPeds);}
- }
+      // Set values for a TProfile bin
+      UpdateTProfile::setBinContent( &apvPeds,(uint32_t)(ibin+1), 
+				     (double)module.GetBinEntries((Int_t)(ihisto*256 + ibin + 1)), 
+				     (double)module.GetBinContent((Int_t)(ihisto*256 + ibin + 1)), 
+				     (double)module.GetBinError((Int_t)(ihisto*256 + ibin + 1)) );
+    }
+    
+    //add new TProfile to llds vector
+    llds.push_back(apvPeds);}
+}

@@ -1,16 +1,15 @@
-<use name=DataFormats/SiStripDetId>
-<use name=DQM/SiStripCommon>
-<use name=DQM/SiStripCommissioningAnalysis>
-<use name=DQM/SiStripCommissioningSummary>
-<use name=DQMServices/ClientConfig>
-<use name=boost>
-<use name=root>
-
 <use name=FWCore/Utilities>
 <use name=FWCore/ParameterSet>
 <use name=FWCore/ServiceRegistry>
 <use name=FWCore/MessageLogger>
 <use name=FWCore/MessageService>
+<use name=DataFormats/SiStripCommon>
+<use name=DQMServices/ClientConfig>
+<use name=DQM/SiStripCommissioningAnalysis>
+<use name=DQM/SiStripCommissioningSummary>
+<use name=DQM/SiStripCommon>
+<use name=boost>
+<use name=root>
 
 <Flags CXXFLAGS="-O0 -g -DDEBUG">
 CXXFLAGS := $(patsubst -O2,,$(CXXFLAGS))

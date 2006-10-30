@@ -1,5 +1,5 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
-#include "DataFormats/SiStripDetId/interface/SiStripControlKey.h" 
+#include "DataFormats/SiStripCommon/interface/SiStripFecKey.h" 
 
 #include <iostream>
 #include <sstream>
@@ -139,8 +139,8 @@ void SiStripCommissioningFile::addDevice(unsigned int key) {
 
   if (view_ == sistrip::CONTROL) {
     if (!dqmFormat_) setDQMFormat(sistrip::UNKNOWN_TASK, sistrip::CONTROL);
-    SiStripControlKey::ControlPath control_path = SiStripControlKey::path(key);
-    string directory_path = SiStripHistoNamingScheme::controlPath(control_path.fecCrate_,control_path.fecSlot_,control_path.fecRing_,control_path.ccuAddr_,control_path.ccuChan_);
+    SiStripFecKey::Path control_path = SiStripFecKey::path(key);
+    string directory_path = SiStripHistoNamingScheme::controlPath(control_path);
     cd(dqm.c_str());
     addPath(directory_path);
 }
