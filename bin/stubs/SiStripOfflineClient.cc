@@ -129,9 +129,21 @@ void SiStripOfflineClient::fillHistoMap() {
 	 
     vector<TProfile*>::iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
-      HistoTitle title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
-      uint16_t channel = ( (title.granularity_ == sistrip::APV) && (title.channel_ >= 32) ) ? (title.channel_-32)/2 : title.channel_;
-
+      
+      static HistoTitle title;
+      title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
+      
+      uint16_t channel = sistrip::invalid_;
+      if ( title.granularity_ == sistrip::APV ) {
+	channel = (title.channel_-32)/2;
+      } else if ( title.granularity_ == sistrip::LLD_CHAN ) {
+	channel = title.channel_;
+      } else {
+	cerr << endl // edm::LogWarning(mlDqmClient_)
+	     << "[CommissioningHistograms::" << __func__ << "]"
+	     << " Unexpected histogram granularity: "
+	     << title.granularity_;
+      }
       uint32_t key = SiStripFecKey::key( path.fecCrate_, 
 					 path.fecSlot_, 
 					 path.fecRing_, 
