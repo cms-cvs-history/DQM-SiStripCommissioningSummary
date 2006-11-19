@@ -256,7 +256,7 @@ HistoTitle SiStripTBMonitorToClientConvert::histoTitle(const string& histo_name)
 					path.fecRing_,
 					path.ccuAddr_,
 					path.ccuChan_,
-					path.channel_); //updates key to the format defined in DataFormats/SiStripDetId/interface/SiStripControlKey.h
+					path.channel_); //updates key to the format defined in DataFormats/SiStripDetId/interface/SiStripFecKey.h
 
   return title;
 }
