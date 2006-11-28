@@ -55,32 +55,35 @@ SiStripTBMonitorToClientConvert::~SiStripTBMonitorToClientConvert() {
 bool SiStripTBMonitorToClientConvert::convert() {
 
   //Define histogram containers
-  map< string, vector<TProfile*> > profile_map;
+  map< string, vector<TH1*> > profile_map;
   map< unsigned int,vector<TProfile> > commissioning_map;
-
-  //find TProfiles from TBMonitor file
+  
+  //find TH1s from TBMonitor file
   if (!tb_) return false;
-  tb_->findProfiles(tb_->top(),&profile_map);
+  tb_->findHistos(tb_->top(),&profile_map);
   if (profile_map.empty()) return false;
-
+  
   //Loop all commissioning tprofiles. Fill map, indexing with CCU Address fec-key. Update client file directory structure.
   
-  for (map< string, vector<TProfile*> >::iterator ihistset = profile_map.begin(); ihistset != profile_map.end(); ihistset++) {
-    for (vector<TProfile*>::iterator ihist = ihistset->second.begin(); ihist != ihistset->second.end(); ihist++) {
-
+  for (map< string, vector<TH1*> >::iterator ihistset = profile_map.begin(); ihistset != profile_map.end(); ihistset++) {
+    for (vector<TH1*>::iterator ihis = ihistset->second.begin(); ihis != ihistset->second.end(); ihis++) {
+      
+      TProfile* ihist = dynamic_cast<TProfile*>(*ihis);
+      if ( !ihist ) { continue; }
+      
       //look for "task id" in the histo title (quick check)
-      const string name((*ihist)->GetName());
+      const string name((ihist)->GetName());
       if (name.find(taskId_) != std::string::npos) {
 	//extract histogram details from encoded histogram name.
 	HistoTitle h_title = histoTitle(name);
 	//update the profile name to the "standard format"
 	string newName = SiStripHistoNamingScheme::histoTitle(h_title);
-	(*ihist)->SetName(newName.c_str());
+	(ihist)->SetName(newName.c_str());
 	//add relevent directory for device if required
 	client_->addDevice(h_title.keyValue_);
 	//update map with reformatted profile using histo key (indicating control path) as the index
 	commissioning_map[h_title.keyValue_].reserve(6);
-	commissioning_map[h_title.keyValue_].push_back(**ihist);
+	commissioning_map[h_title.keyValue_].push_back(*ihist);
       }
     }
   }

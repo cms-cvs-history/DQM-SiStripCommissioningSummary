@@ -1,29 +1,28 @@
 #ifndef DQM_SiStripCommissioningSummary_SiStripCommissioningFile_h
 #define DQM_SiStripCommissioningSummary_SiStripCommissioningFile_h
 
-//common
 #include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
-
-//root
-#include "TFile.h"
-#include "TProfile.h"
 #include "TDirectory.h"
-
-#include <map>
+#include "TFile.h"
+#include "TH1.h"
 #include <vector>
 #include <string>
+#include <map>
 
 /** 
     @file : DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h
     @class : SiStripCommissioningFile
     @author : M.Wingham
-
-    @brief : Inherits from TFile with added functionality to easily build and navigate commissioning files. 
+    
+    @brief : Inherits from TFile with added functionality to easily
+    build and navigate commissioning files.
 */
 
 class SiStripCommissioningFile : public TFile {
 
  public:
+
+  // -------------------- Constructors, destructors, typedefs --------------------
 
   /** Constructor */
   SiStripCommissioningFile( const char* fname, 
@@ -33,14 +32,25 @@ class SiStripCommissioningFile : public TFile {
   
   /** Destructor */
   virtual ~SiStripCommissioningFile();
+  
+  //
+  typedef std::vector<TH1*> Histos;
+  typedef std::map< std::string, Histos > HistosMap;
+  
+  // -------------------- Public interface --------------------
 
-  /** Formats the commissioning file with the correct "top-level" directory structure. Inserts string defining commissioning task in sistrip::root_ directory */
+  /** Formats the commissioning file with the correct "top-level"
+      directory structure. Inserts string defining commissioning task
+      in sistrip::root_ directory */
   TDirectory* setDQMFormat( sistrip::Task, sistrip::View );
 
-  /** Checks file complies with DQM format requirements. If so, updates record directory "top-level" directory structure and of readout view and commissioning task. */
+  /** Checks file complies with DQM format requirements. If so,
+      updates record directory "top-level" directory structure and of
+      readout view and commissioning task. */
   TDirectory* readDQMFormat();
 
-  /** Checks to see if the file complies with DQM format requirements. */
+  /** Checks to see if the file complies with DQM format
+      requirements. */
   bool queryDQMFormat();
 
   /** Returns the "top" directory (describing the readout view) */
@@ -64,15 +74,13 @@ class SiStripCommissioningFile : public TFile {
   /** Adds a path to the file. Any directories within the path that already exist are not recreated.*/
   TDirectory* addPath(const std::string&);
 
-  /** Finds TProfiles, iterating through sub-directories. Fills a map, indexed by the histogram path. */
-  void findProfiles(TDirectory*, std::map< std::string, std::vector<TProfile*> >*);
+  /** Finds TH1 histograms, iterating through sub-directories. Fills a map, indexed by the histogram path. */
+  void findHistos(TDirectory*, std::map< std::string, std::vector<TH1*> >*);
 
-  /** Finds TProfiles and TDirectories conatined within the directory. Updates the map with the TProfiles found, indexed by the path.*/
-  void dirContent(TDirectory*, std::vector<TDirectory*>*, std::map< std::string, std::vector<TProfile*> >*);
+  /** Finds histos and sub-dirs found within given directory. Updates
+      map with found histos, indexed by dir path. */
+  void dirContent(TDirectory*, std::vector<TDirectory*>*, std::map< std::string, std::vector<TH1*> >*);
 
-  /** */
-  static const std::string dqm;
-  
  private:
   /** Commissioning task */
   sistrip::Task task_;

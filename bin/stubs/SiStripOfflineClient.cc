@@ -108,13 +108,13 @@ void SiStripOfflineClient::analysis() {
 //
 void SiStripOfflineClient::fillHistoMap() {
   
-  map< string, vector<TProfile*> > histos;
+  map< string, vector<TH1*> > histos;
   
   // Get histograms from client file
-  file_->findProfiles( file_->top(), &histos );
+  file_->findHistos( file_->top(), &histos );
   
   // Convert map (to use FEC key as index, rather than directory string)
-  map< string, vector<TProfile*> >::iterator iter = histos.begin();
+  map< string, vector<TH1*> >::iterator iter = histos.begin();
   for ( ; iter != histos.end(); iter++ ) {
     //cout << "Directory: " << iter->first << endl;
     uint32_t index = iter->first.find( sistrip::controlView_ );
@@ -127,7 +127,7 @@ void SiStripOfflineClient::fillHistoMap() {
 	 path.ccuAddr_ == sistrip::invalid_ ||
 	 path.ccuChan_ == sistrip::invalid_ ) { continue; }
 	 
-    vector<TProfile*>::iterator ihis = iter->second.begin();
+    vector<TH1*>::iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
       
       static HistoTitle title;

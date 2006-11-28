@@ -1,10 +1,10 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
+#include "DataFormats/SiStripCommon/interface/SiStripConstants.h" 
 #include "DataFormats/SiStripCommon/interface/SiStripFecKey.h" 
-
+#include "TString.h"
+#include "TProfile.h"
 #include <iostream>
 #include <sstream>
-
-#include "TString.h"
 
 using namespace std;
 
@@ -33,29 +33,29 @@ SiStripCommissioningFile::~SiStripCommissioningFile() {;}
 
 TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::View view) {
 
-   view_ = view;
-   task_ = task;
+  view_ = view;
+  task_ = task;
 
- if (view == sistrip::CONTROL) {
-   stringstream ss("");
-   ss << dqm << sistrip::dir_ << sistrip::root_ << sistrip::dir_ << sistrip::controlView_;
-   top_ = addPath(ss.str());
-   dqmTop_ = GetDirectory(dqm.c_str());
-   sistripTop_ = dqmTop_->GetDirectory(sistrip::root_.c_str());
-   dqmFormat_ = true;
+  if (view == sistrip::CONTROL) {
+    stringstream ss("");
+    ss << sistrip::dqmRoot_ << sistrip::dir_ << sistrip::root_ << sistrip::dir_ << sistrip::controlView_;
+    top_ = addPath(ss.str());
+    dqmTop_ = GetDirectory(sistrip::dqmRoot_.c_str());
+    sistripTop_ = dqmTop_->GetDirectory(sistrip::root_.c_str());
+    dqmFormat_ = true;
 
-   //TNamed defining commissioning task
-   stringstream task_label;
-   stringstream task_title;
-   task_label << sistrip::commissioningTask_ << sistrip::sep_ << SiStripHistoNamingScheme::task(task_);
-   task_title << "s=" << SiStripHistoNamingScheme::task(task_);
-   TNamed task_description(task_label.str().c_str(),task_title.str().c_str());
-   sistripTop_->WriteTObject(&task_description);
-}
+    //TNamed defining commissioning task
+    stringstream task_label;
+    stringstream task_title;
+    task_label << sistrip::commissioningTask_ << sistrip::sep_ << SiStripHistoNamingScheme::task(task_);
+    task_title << "s=" << SiStripHistoNamingScheme::task(task_);
+    TNamed task_description(task_label.str().c_str(),task_title.str().c_str());
+    sistripTop_->WriteTObject(&task_description);
+  }
 
   else {cout << "[CommissioningFile::setDQMFormat]: Currently only implemented for Control View." << endl; return 0;}
 
- return top_;
+  return top_;
 }
 
 //-----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::
 TDirectory* SiStripCommissioningFile::readDQMFormat() {
   
   //check directory structure and find readout view
-  dqmTop_ = GetDirectory(dqm.c_str());
+  dqmTop_ = GetDirectory(sistrip::dqmRoot_.c_str());
   if (dqmTop_) sistripTop_ = dqmTop_->GetDirectory(sistrip::root_.c_str());
   if (sistripTop_) top_ = sistripTop_->GetDirectory(sistrip::controlView_.c_str());
   if (top_!=gDirectory) view_ = sistrip::CONTROL;
@@ -83,10 +83,10 @@ TDirectory* SiStripCommissioningFile::readDQMFormat() {
           if (obj == keylist->Last()) {loop = false;}
           if ( string(obj->GetName()).find(sistrip::commissioningTask_) != string::npos ) {
             task_ = SiStripHistoNamingScheme::task( string(obj->GetTitle()).substr(2,string::npos) );
-// 	    cout << " name: " << string(obj->GetName())
-// 		 << " title: " << string(obj->GetTitle()) 
-// 		 << " task: " << SiStripHistoNamingScheme::task( task_ )
-// 		 << endl;
+	    // 	    cout << " name: " << string(obj->GetName())
+	    // 		 << " title: " << string(obj->GetTitle()) 
+	    // 		 << " task: " << SiStripHistoNamingScheme::task( task_ )
+	    // 		 << endl;
           }
           obj = keylist->After(obj);
         }
@@ -141,11 +141,11 @@ void SiStripCommissioningFile::addDevice(unsigned int key) {
     if (!dqmFormat_) setDQMFormat(sistrip::UNKNOWN_TASK, sistrip::CONTROL);
     SiStripFecKey::Path control_path = SiStripFecKey::path(key);
     string directory_path = SiStripHistoNamingScheme::controlPath(control_path);
-    cd(dqm.c_str());
+    cd(sistrip::dqmRoot_.c_str());
     addPath(directory_path);
-}
+  }
 
- else {cout << "[CommissioningFile::addDevice]: Currently only implemented for Control View." << endl; }
+  else {cout << "[CommissioningFile::addDevice]: Currently only implemented for Control View." << endl; }
 
 }
 
@@ -155,38 +155,38 @@ TDirectory* SiStripCommissioningFile::addPath(const string& path) {
 
   vector<string> directories; directories.reserve(10);
 
- //fill vector
- string::const_iterator it, previous_dir, latest_dir;
- if (*(path.begin()) == sistrip::dir_) {
-   it = previous_dir = latest_dir = path.begin();}
- else {it = previous_dir = latest_dir = path.begin()-1;}
+  //fill vector
+  string::const_iterator it, previous_dir, latest_dir;
+  if (*(path.begin()) == sistrip::dir_) {
+    it = previous_dir = latest_dir = path.begin();}
+  else {it = previous_dir = latest_dir = path.begin()-1;}
 
- while (it != path.end()) {
-   it++;
-   if (*it == sistrip::dir_) {
-     previous_dir = latest_dir; 
-     latest_dir = it;
-     directories.push_back(string(previous_dir+1, latest_dir));
-   }
- }
+  while (it != path.end()) {
+    it++;
+    if (*it == sistrip::dir_) {
+      previous_dir = latest_dir; 
+      latest_dir = it;
+      directories.push_back(string(previous_dir+1, latest_dir));
+    }
+  }
 
- if (latest_dir != (path.end()-1)) {
-   directories.push_back(string(latest_dir+1, path.end()));}
+  if (latest_dir != (path.end()-1)) {
+    directories.push_back(string(latest_dir+1, path.end()));}
  
- //update file
- TDirectory* child = gDirectory;
- for (vector<string>::const_iterator dir = directories.begin(); dir != directories.end(); dir++) {
-   if (!dynamic_cast<TDirectory*>(child->Get(dir->c_str()))) {
-   child = child->mkdir(dir->c_str());
-   child->cd();}
-   else {child->Cd(dir->c_str()); child = gDirectory;}
- }
- return child;
+  //update file
+  TDirectory* child = gDirectory;
+  for (vector<string>::const_iterator dir = directories.begin(); dir != directories.end(); dir++) {
+    if (!dynamic_cast<TDirectory*>(child->Get(dir->c_str()))) {
+      child = child->mkdir(dir->c_str());
+      child->cd();}
+    else {child->Cd(dir->c_str()); child = gDirectory;}
+  }
+  return child;
 }
 
 //-----------------------------------------------------------------------------
 
-void SiStripCommissioningFile::findProfiles(TDirectory* dir, map< string, vector<TProfile*> >* histos) {
+void SiStripCommissioningFile::findHistos( TDirectory* dir, map< string, vector<TH1*> >* histos ) {
 
   vector< TDirectory* > dirs;
   dirs.reserve(20000);
@@ -203,47 +203,40 @@ void SiStripCommissioningFile::findProfiles(TDirectory* dir, map< string, vector
 //-----------------------------------------------------------------------------
 
 
- void SiStripCommissioningFile::dirContent(TDirectory* dir, 
-					   vector<TDirectory*>* dirs, 
-					   map< string, vector<TProfile*> >* histos ) {
+void SiStripCommissioningFile::dirContent(TDirectory* dir, 
+					  vector<TDirectory*>* dirs, 
+					  map< string, vector<TH1*> >* histos ) {
 
-    TList* keylist = dir->GetListOfKeys();
+  TList* keylist = dir->GetListOfKeys();
+  if (keylist) {
 
-    if (keylist) {
-      TObject* obj = keylist->First(); //the object
+    TObject* obj = keylist->First(); // the object (dir or histo)
 
-      if (obj) {
-	bool loop = true;
-	while (loop) { 
-	  if (obj == keylist->Last()) {loop = false;}
+    if ( obj ) {
+      bool loop = true;
+      while (loop) { 
+	if (obj == keylist->Last()) {loop = false;}
  
-	  if (dynamic_cast<TDirectory*>(dir->Get(obj->GetName()))) {
-	    TDirectory* child = dynamic_cast<TDirectory*>(dir->Get(obj->GetName()));
+	if (dynamic_cast<TDirectory*>(dir->Get(obj->GetName()))) {
+	  TDirectory* child = dynamic_cast<TDirectory*>(dir->Get(obj->GetName()));
 
-	    //update record of directories
-	    dirs->push_back(child);
-	  }
-	  
-	  if (dynamic_cast<TProfile*>(dir->Get(obj->GetName()))) {
-	    TProfile* tprof = dynamic_cast<TProfile*>(dir->Get(obj->GetName()));
-	    //update record of tprofiles
-	    bool found = false;
-	    vector<TProfile*>::iterator iprof = (*histos)[string(dir->GetPath())].begin();
-	    for ( ; iprof != (*histos)[string(dir->GetPath())].end(); iprof++ ) {
-	      if ( (*iprof)->GetName() == tprof->GetName() ) { found = true; }
-	    }
-	    if ( !found ) { (*histos)[string(dir->GetPath())].push_back(tprof); }
-	  }
-	  obj = keylist->After(obj);
+	  //update record of directories
+	  dirs->push_back(child);
 	}
+	  
+	TH1* his = dynamic_cast<TH1*>( dir->Get(obj->GetName()) );
+	if ( his ) {
+	  bool found = false;
+	  vector<TH1*>::iterator ihis = (*histos)[string(dir->GetPath())].begin();
+	  for ( ; ihis != (*histos)[string(dir->GetPath())].end(); ihis++ ) {
+	    if ( (*ihis)->GetName() == his->GetName() ) { found = true; }
+	  }
+	  if ( !found ) { (*histos)[string(dir->GetPath())].push_back(his); }
+	}
+	obj = keylist->After(obj);
       }
     }
- }
+  }
 
-//-----------------------------------------------------------------------------
-
-const string SiStripCommissioningFile::dqm = "DQMData";
-
-//-----------------------------------------------------------------------------
-
+}
 

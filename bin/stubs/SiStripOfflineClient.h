@@ -17,7 +17,7 @@ class SiStripOfflineClient {
   
  public:
   
-  typedef std::vector<TProfile*> Histos;
+  typedef std::vector<TH1*> Histos;
   typedef std::map< uint32_t, Histos > HistosMap;
   
   SiStripOfflineClient( const std::string& filename,
