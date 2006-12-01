@@ -5,6 +5,8 @@
 #include <boost/cstdint.hpp>
 #include <string>
 
+class TH1;
+
 /**
    @class SiStripOfflineClient
    @author M.Wingham, R.Bainbridge
