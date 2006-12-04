@@ -52,13 +52,13 @@ class SiStripCommissioningFile : public TFile {
   /** Checks to see if the file complies with DQM format
       requirements. */
   bool queryDQMFormat();
-
+  
   /** Returns the "top" directory (describing the readout view) */
   TDirectory* top();
-
+  
   /** Returns the dqm directory */
   TDirectory* dqmTop();
-
+  
   /** Returns the sistrip::root_ directory */
   TDirectory* sistripTop();
 
@@ -72,7 +72,7 @@ class SiStripCommissioningFile : public TFile {
   void addDevice(unsigned int key);
 
   /** Adds a path to the file. Any directories within the path that already exist are not recreated.*/
-  TDirectory* addPath(const std::string&);
+  TDirectory* addPath( const std::string& );
 
   /** Finds TH1 histograms, iterating through sub-directories. Fills a map, indexed by the histogram path. */
   void findHistos(TDirectory*, std::map< std::string, std::vector<TH1*> >*);

@@ -2,219 +2,272 @@
  *
  *  Implementation of ConfigParser
  *
- *  $Date: 21/9/2006 $
+ *  $Date: 2006/10/03 08:14:37 $
  *  Revision: 1.0
  *  \author Puneeth Kalavase
  */
 
 #include "DQM/SiStripCommissioningSummary/bin/stubs/ConfigParser.h"
+#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
 #include <stdexcept>
 #include <map>
 #include <vector>
 
 using namespace std;
+using namespace xercesc;
 
+// -----------------------------------------------------------------------------
+//
+const string ConfigParser::rootTag_ = "root";
+const string ConfigParser::runTypeTag_ = "RunType";
+const string ConfigParser::runTypeAttr_ = "name";
+const string ConfigParser::summaryPlotTag_ = "SummaryPlot";
+const string ConfigParser::monitorableAttr_ = "monitorable";
+const string ConfigParser::presentationAttr_ = "presentation";
+const string ConfigParser::viewAttr_ = "view";
+const string ConfigParser::levelAttr_ = "level";
+const string ConfigParser::granularityAttr_ = "granularity";
+
+// -----------------------------------------------------------------------------
+//
 ConfigParser::ConfigParser() {
-  settings_map.clear();
+  summaryPlotMap_.clear();
+  try { XMLPlatformUtils::Initialize(); }
+  catch ( const XMLException &f ) {
+    throw( runtime_error("Standard pool exception : Fatal Error on pool::TrivialFileCatalog") );
+  }
+}
 
+// -----------------------------------------------------------------------------
+// 
+ConfigParser::SummaryPlot::SummaryPlot() :
+  mon_( sistrip::UNKNOWN_MONITORABLE ),
+  pres_( sistrip::UNKNOWN_PRESENTATION ),
+  view_( sistrip::UNKNOWN_VIEW ),
+  gran_( sistrip::UNKNOWN_GRAN ),
+  level_("")
+{;}
+
+// -----------------------------------------------------------------------------
+// 
+void ConfigParser::SummaryPlot::reset() {
+  mon_ =  sistrip::UNKNOWN_MONITORABLE;
+  pres_ =  sistrip::UNKNOWN_PRESENTATION;
+  view_ = sistrip::UNKNOWN_VIEW;
+  gran_ =  sistrip::UNKNOWN_GRAN;
+  level_ = "";
+}
+
+// -----------------------------------------------------------------------------
+// 
+void ConfigParser::SummaryPlot::print( stringstream& ss ) const {
+  ss << "[ConfigParser::SummaryPlot::" << __func__ << "]" << endl
+     << " Monitorable:  " <<  SiStripHistoNamingScheme::monitorable(mon_) << endl
+     << " Presentation: " << SiStripHistoNamingScheme::presentation(pres_) << endl
+     << " View:         " << SiStripHistoNamingScheme::view(view_) << endl
+     << " TopLevelDir:  " << level_ << endl
+     << " Granularity:  " << SiStripHistoNamingScheme::granularity(gran_) << endl;
+}
+
+// -----------------------------------------------------------------------------
+// 
+void ConfigParser::SummaryPlot::checkView() {
+
+  sistrip::View check = SiStripHistoNamingScheme::view( level_ );
+  
+  if ( check != view_ ) {
+    stringstream ss;
+    ss << "[ConfigParser::SummaryPlot::" << __func__ << "]"
+       << " Mismatch between level_ and view_ member data!";
+    if ( check != sistrip::UNKNOWN_VIEW ) {
+      ss << " Changing view_ from "
+	 << SiStripHistoNamingScheme::view( view_ )
+	 << " to " 
+	 << SiStripHistoNamingScheme::view( check ); 
+      view_ = check;
+    } else {
+      string temp = SiStripHistoNamingScheme::view( view_ ) + "/" + level_;
+      ss << " Changing level_ from "
+	 << level_ 
+	 << " to " 
+	 << temp;
+      level_ = temp;
+    }
+    cerr << ss.str() << endl;
+  }
+  
+}
+
+// -----------------------------------------------------------------------------
+//
+ostream& operator<< ( std::ostream& os, const ConfigParser::SummaryPlot& summary ) {
+  stringstream ss;
+  summary.print(ss);
+  os << ss.str();
+  return os;
+}
+
+// -----------------------------------------------------------------------------
+//
+const vector<ConfigParser::SummaryPlot>& ConfigParser::summaryPlots( const sistrip::Task& task ) {
+  
+  if( summaryPlotMap_.empty() ) {
+    cout << "You have not called the parseXML function,"
+	 << " or your XML file is erronious" << endl;
+  }
+  if( summaryPlotMap_.find( task ) != summaryPlotMap_.end() ) {
+    return summaryPlotMap_[task];
+  } else {
+    static vector<SummaryPlot> blank;
+    return blank;
+  }
+
+}
+
+// -----------------------------------------------------------------------------
+//
+void ConfigParser::parseXML( const string& f ) {
+  
+  summaryPlotMap_.clear();
+  ConfigParser::SummaryPlot summary;
+  
   try {
-    XMLPlatformUtils::Initialize();
-  }
-  
-  catch (const XMLException &f) {
-    throw(std::runtime_error("Standard pool exception : Fatal Error on pool::TrivialFileCatalog"));
-  }
-}
 
-ConfigParser::~ConfigParser() {;}
-
-
-void ConfigParser::getFileNames(std::vector<std::string>& vect_fnames) {
-  
-  if(settings_map.empty())
-    std::cout << "You have not called the parseXML function, or your XML file is erronious" << std::endl;
-  
-  std::map<std::string, std::vector<SummaryInfo> >::iterator iter;
-  for(iter=settings_map.begin(); iter!=settings_map.end(); iter++) {
-    vect_fnames.push_back((*iter).first);
-  }  
-}
-
-
-std::vector<ConfigParser::SummaryInfo> ConfigParser::getSummaryInfo(std::string fname) {
-  
-  if(settings_map.empty())
-    std::cout << "You have not called the parseXML function, or your XML file is erronious" << std::endl;
-  if(settings_map.find(fname)!=settings_map.end())
-    return settings_map[fname];
-  else {
-    std::vector<SummaryInfo> blank;
-    return blank;}
-}
-
-
-void ConfigParser::parseXML(std::string f) {
-  
-  
-  settings_map.clear();
-  std::vector<ConfigParser::SummaryInfo>  v1;  //vector of structs of options for each file
-  getDocument(f);
-  DOMNode *root = doc->getDocumentElement();
-  std::string fname;
-  SummaryInfo options;  
-  DOMNodeIterator *iter = doc->createNodeIterator(root, DOMNodeFilter::SHOW_ELEMENT, NULL, true);
-  bool BEGINNING=true;
-  bool FIRSTHISTO=true;
-  DOMElement *elem = dynamic_cast <DOMElement *>(iter->nextNode());
-  unsigned int i=0;
-  while(elem!=NULL) {
-    i++;
-    if(std::strcmp((qtxml::_toString(elem->getTagName())).c_str(), "ClientFile")==0) {
-      fname=qtxml::_toString(elem->getAttribute(qtxml::_toDOMS("name")));}
-
-    if(std::strcmp( (qtxml::_toString(elem->getTagName())).c_str(), "SummaryHisto")==0) {
+    // Create parser and open XML document
+    getDocument(f);
     
-      if(!FIRSTHISTO) {
-      v1.push_back(options);
-      options.reset();}
-      else {
-	FIRSTHISTO=false;}
+    // Retrieve root element
+    DOMElement* root = this->doc->getDocumentElement();
+    if( !root ) { 
+      stringstream ss;
+      ss << "[ConfigParser::" << __func__ << "]"
+	 << " Unable to find any elements!"
+	 << " Empty xml document?...";
+      throw( runtime_error( ss.str() ) ); 
+    }
 
-      string summaryhisto =  qtxml::_toString(elem->getAttribute(qtxml::_toDOMS("histo")));
-      if (summaryhisto == sistrip::undefinedSummaryHisto_) {
-	options.histogram = sistrip::UNDEFINED_SUMMARY_HISTO;}
-      else if (summaryhisto == sistrip::undefinedSummaryHisto_) {
-	options.histogram  = sistrip::UNDEFINED_SUMMARY_HISTO;}
-      else if (summaryhisto == sistrip::apvTimingTime_) {
-	options.histogram = sistrip::APV_TIMING_TIME;}
-      else if (summaryhisto == sistrip::apvTimingMax_) {
-	options.histogram = sistrip::APV_TIMING_MAX_TIME;}
-      else if (summaryhisto == sistrip::apvTimingDelay_) {
-	options.histogram = sistrip::APV_TIMING_DELAY;}
-      else if (summaryhisto == sistrip::apvTimingError_) {
-	options.histogram = sistrip::APV_TIMING_ERROR;}
-      else if (summaryhisto == sistrip::apvTimingBase_) {
-	options.histogram = sistrip::APV_TIMING_BASE;}
-      else if (summaryhisto == sistrip::apvTimingPeak_) {
-	options.histogram = sistrip::APV_TIMING_PEAK;}
-      else if (summaryhisto == sistrip::apvTimingHeight_) {
-	options.histogram = sistrip::APV_TIMING_HEIGHT;}
-      else if (summaryhisto == sistrip::fedTimingTime_) {
-	options.histogram = sistrip::FED_TIMING_TIME;}
-      else if (summaryhisto == sistrip::fedTimingMax_) {
-	options.histogram = sistrip::FED_TIMING_MAX_TIME;}
-      else if (summaryhisto == sistrip::fedTimingDelay_) {
-	options.histogram = sistrip::FED_TIMING_DELAY;}
-      else if (summaryhisto == sistrip::fedTimingError_) {
-	options.histogram = sistrip::FED_TIMING_ERROR;}
-      else if (summaryhisto == sistrip::fedTimingBase_) {
-	options.histogram = sistrip::FED_TIMING_BASE;}
-      else if (summaryhisto == sistrip::fedTimingPeak_) {
-	options.histogram = sistrip::FED_TIMING_PEAK;}
-      else if (summaryhisto == sistrip::fedTimingHeight_) {
-	options.histogram = sistrip::FED_TIMING_HEIGHT;}
-      else if (summaryhisto == sistrip::optoScanLldBias_) {
-	options.histogram = sistrip::OPTO_SCAN_LLD_BIAS_SETTING;}
-      else if (summaryhisto == sistrip::optoScanLldGain_) {
-	options.histogram = sistrip::OPTO_SCAN_LLD_GAIN_SETTING;}
-      else if (summaryhisto == sistrip::optoScanMeasGain_) {
-	options.histogram = sistrip::OPTO_SCAN_MEASURED_GAIN;}
-      else if (summaryhisto == sistrip::optoScanZeroLight_) {
-	options.histogram = sistrip::OPTO_SCAN_ZERO_LIGHT_LEVEL;}
-      else if (summaryhisto == sistrip::optoScanLinkNoise_) {
-	options.histogram = sistrip::OPTO_SCAN_LINK_NOISE;}
-      else if (summaryhisto == sistrip::optoScanBaseLiftOff_) {
-	options.histogram = sistrip::OPTO_SCAN_BASELINE_LIFT_OFF;}
-      else if (summaryhisto == sistrip::optoScanLaserThresh_) {
-	options.histogram = sistrip::OPTO_SCAN_LASER_THRESHOLD;}
-      else if (summaryhisto == sistrip::optoScanTickHeight_) {
-	options.histogram = sistrip::OPTO_SCAN_TICK_HEIGHT;}
-      else if (summaryhisto == sistrip::vpspScanBothApvs_) {
-	options.histogram = sistrip::VPSP_SCAN_BOTH_APVS;}
-      else if (summaryhisto == sistrip::vpspScanApv0_) {
-	options.histogram = sistrip::VPSP_SCAN_APV0;}
-      else if (summaryhisto == sistrip::vpspScanApv1_) {
-	options.histogram = sistrip::VPSP_SCAN_APV1;}
-      else if (summaryhisto == sistrip::pedestalsAllStrips_) {
-	options.histogram = sistrip::PEDESTALS_ALL_STRIPS;}
-      else if (summaryhisto == sistrip::pedestalsMean_) {
-	options.histogram = sistrip::PEDESTALS_MEAN;}
-      else if (summaryhisto == sistrip::pedestalsSpread_) {
-	options.histogram = sistrip::PEDESTALS_SPREAD;}
-      else if (summaryhisto == sistrip::pedestalsMax_) {
-	options.histogram = sistrip::PEDESTALS_MAX;}
-      else if (summaryhisto == sistrip::pedestalsMin_) {
-	options.histogram = sistrip::PEDESTALS_MIN;}
-      else if (summaryhisto == sistrip::noiseAllStrips_) {
-	options.histogram = sistrip::NOISE_ALL_STRIPS;}
-      else if (summaryhisto == sistrip::noiseMean_) {
-	options.histogram = sistrip::NOISE_MEAN;}
-      else if (summaryhisto == sistrip::noiseSpread_) {
-	options.histogram = sistrip::NOISE_SPREAD;}
-      else if (summaryhisto == sistrip::noiseMax_) {
-	options.histogram = sistrip::NOISE_MAX;}
-      else if (summaryhisto == sistrip::noiseMin_) {
-	options.histogram = sistrip::NOISE_MIN;}
-      else if (summaryhisto == sistrip::numOfDead_) {
-	options.histogram = sistrip::NUM_OF_DEAD;}
-      else if (summaryhisto == sistrip::numOfNoisy_) {
-	options.histogram = sistrip::NUM_OF_NOISY;}}
+    // Check on "root" tag
+    if( !XMLString::equals( root->getTagName(), XMLString::transcode(rootTag_.c_str()) ) ) {
+      cout << "[ConfigParser::" << __func__ << "]"
+	   << " Did not find \"" << rootTag_ << "\" tag! " 
+	   << " Tag name is "
+	   << XMLString::transcode(root->getNodeName()) 
+	   << endl;
+      return;
+    }
+        
+    // Retrieve nodes in xml document
+    DOMNodeList* nodes = root->getChildNodes();
+    if ( nodes->getLength() == 0 ) { 
+      stringstream ss;
+      ss << "[ConfigParser::" << __func__ << "]"
+	 << " Unable to find any children nodes!"
+	 << " Empty xml document?...";
+      throw( runtime_error( ss.str() ) ); 
+      return;
+    }
+
+
+    cout << "[ConfigParser::" << __func__ << "]"
+	 << " Found \"" << rootTag_ << "\" tag!" 
+	 << endl;
     
-    if(std::strcmp((qtxml::_toString(elem->getTagName())).c_str(), "SummaryLevel")==0) {
-      options.level =  qtxml::_toString(elem->getAttribute(qtxml::_toDOMS("level")));}
- 
-    if(std::strcmp((qtxml::_toString(elem->getTagName())).c_str(), "SummaryType")==0) {
-      string summarytype =  qtxml::_toString(elem->getAttribute(qtxml::_toDOMS("type")));
-      
-      if (summarytype == sistrip::undefinedSummaryType_) {
-	options.type = sistrip::UNDEFINED_SUMMARY_TYPE;}
-      else if (summarytype == sistrip::summaryDistr_) {
-	options.type = sistrip::SUMMARY_DISTR;}
-      else if (summarytype == sistrip::summary1D_) {
-	options.type = sistrip::SUMMARY_1D;}
-      else if (summarytype == sistrip::summary2D_) {
-	options.type = sistrip::SUMMARY_2D;}
-      else if (summarytype == sistrip::summaryProf_) {
-	options.type = sistrip::SUMMARY_PROF;}}
- 
-    if(std::strcmp((qtxml::_toString(elem->getTagName())).c_str(), "SummaryGran")==0) {
-      string granularity =  qtxml::_toString(elem->getAttribute(qtxml::_toDOMS("gran")));
-
-      if (granularity == sistrip::fecCrate_) {
-	options.granularity = sistrip::FEC_CRATE;}
-      else if (granularity == sistrip::fecSlot_) {
-	options.granularity = sistrip::FEC_SLOT;}
-      else if (granularity == sistrip::fecRing_) {
-	options.granularity = sistrip::FEC_RING;}
-      else if (granularity == sistrip::ccuAddr_) {
-	options.granularity = sistrip::CCU_ADDR;}
-      else if (granularity == sistrip::ccuChan_) {
-	options.granularity = sistrip::CCU_CHAN;}
-      else if (granularity == sistrip::lldChan_) {
-	options.granularity = sistrip::LLD_CHAN;}
-      else if (granularity == sistrip::apv_) {
-	options.granularity = sistrip::APV;}} 
-
-    elem=dynamic_cast <DOMElement *>(iter->nextNode());
+    cout << "[ConfigParser::" << __func__ << "]"
+	 << " Found " << nodes->getLength()
+	 << " children nodes!" 
+	 << endl;
     
-    if(elem!=NULL) {  //for when iter is not at end of XML file, but is at next ClientFile node
-      if(std::strcmp((qtxml::_toString(elem->getTagName())).c_str(), "ClientFile")==0 && BEGINNING==false) {
-	v1.push_back(options);
-	options.reset();
-	FIRSTHISTO=true;
-	settings_map[fname]=v1; //assign vector of structs into settings map
-	 v1.clear();
+    // Iterate through nodes
+    for( XMLSize_t inode = 0; inode < nodes->getLength(); ++inode ) {
+
+      // Check on whether node is element
+      DOMNode* node = nodes->item(inode);
+      if( node->getNodeType() &&
+	  node->getNodeType() == DOMNode::ELEMENT_NODE ) {
+	
+	DOMElement* element = dynamic_cast<DOMElement*>( node );
+	if ( !element ) { continue; }
+
+	if( XMLString::equals( element->getTagName(), 
+			       XMLString::transcode(runTypeTag_.c_str()) ) ) {
+	  
+	  const XMLCh* attr = element->getAttribute( XMLString::transcode(runTypeAttr_.c_str()) );
+	  sistrip::Task task = SiStripHistoNamingScheme::task( XMLString::transcode(attr) );
+
+	  cout << "[ConfigParser::" << __func__ << "]"
+	       << " Found \"" << runTypeTag_ << "\" tag!" << endl
+	       << "  with tag name \"" << XMLString::transcode(element->getNodeName()) << "\"" << endl
+	       << "  and attr \"" << runTypeAttr_ << "\" with value \"" << XMLString::transcode(attr) << "\"" << endl;
+
+	  // Retrieve nodes in xml document
+	  DOMNodeList* children = node->getChildNodes();
+	  if ( nodes->getLength() == 0 ) { 
+	    stringstream ss;
+	    ss << "[ConfigParser::" << __func__ << "]"
+	       << " Unable to find any children nodes!"
+	       << " Empty xml document?...";
+	    throw( runtime_error( ss.str() ) ); 
+	    return;
+	  }
+
+	  // Iterate through nodes
+	  for( XMLSize_t jnode = 0; jnode < children->getLength(); ++jnode ) {
+
+	    // Check on whether node is element
+	    DOMNode* child = children->item(jnode);
+	    if( child->getNodeType() &&
+		child->getNodeType() == DOMNode::ELEMENT_NODE ) {
+	
+	      DOMElement* elem = dynamic_cast<DOMElement*>( child );
+	      if ( !elem ) { continue; }
+
+	      if( XMLString::equals( elem->getTagName(), 
+				     XMLString::transcode(summaryPlotTag_.c_str()) ) ) {
+	  	
+		const XMLCh* mon = elem->getAttribute( XMLString::transcode(monitorableAttr_.c_str()) );
+		const XMLCh* pres = elem->getAttribute( XMLString::transcode(presentationAttr_.c_str()) );
+		const XMLCh* view = elem->getAttribute( XMLString::transcode(viewAttr_.c_str()) );
+		const XMLCh* level = elem->getAttribute( XMLString::transcode(levelAttr_.c_str()) );
+		const XMLCh* gran = elem->getAttribute( XMLString::transcode(granularityAttr_.c_str()) );
+  
+		cout << "[ConfigParser::" << __func__ << "]"
+		     << " Found \"" << summaryPlotTag_ << "\" tag!" << endl
+		     << "  with tag name \"" << XMLString::transcode(elem->getNodeName()) << "\"" << endl
+		     << "  and attr \"" << monitorableAttr_ << "\" with value \"" << XMLString::transcode(mon) << "\"" << endl
+		     << "  and attr \"" << presentationAttr_ << "\" with value \"" << XMLString::transcode(pres) << "\"" << endl
+		     << "  and attr \"" << viewAttr_ << "\" with value \"" << XMLString::transcode(view) << "\"" << endl
+		     << "  and attr \"" << levelAttr_ << "\" with value \"" << XMLString::transcode(level) << "\"" << endl
+		     << "  and attr \"" << granularityAttr_ << "\" with value \"" << XMLString::transcode(gran) << "\"" << endl;
+
+		// Update SummaryPlot object and push back into map
+		summary.reset();
+		summary.mon_ = SiStripHistoNamingScheme::monitorable( XMLString::transcode(mon) );
+		summary.pres_ = SiStripHistoNamingScheme::presentation( XMLString::transcode(pres) );
+		summary.view_ = SiStripHistoNamingScheme::view( XMLString::transcode(view) );
+		summary.gran_ = SiStripHistoNamingScheme::granularity( XMLString::transcode(gran) );
+		summary.level_ = XMLString::transcode(level);
+		summary.checkView();
+		summaryPlotMap_[task].push_back(summary);
+		
+	      }
+	    }
+	  }
+	  
+	}
       }
-      BEGINNING=false;
-    } else if(elem==NULL) { //iter is at end of xml node
-      v1.push_back(options);
-      options.reset();
-      FIRSTHISTO=true;
-      settings_map[fname]=v1;
-      v1.clear();
-     }
-  } //while statement
+    }
+
+  }
+  catch( XMLException& e ) {
+    char* message = XMLString::transcode(e.getMessage());
+    ostringstream ss;
+    ss << "[ConfigParser::" << __func__ << "]"
+       << " Error parsing file: " << message << flush;
+    XMLString::release( &message );
+  }
   
 }
+
+
 
 

@@ -2,8 +2,11 @@
 #define DQM_SiStripCommissioningSummary_SiStripOfflineClient_H
 
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
+#include "DQM/SiStripCommissioningSummary/bin/stubs/ConfigParser.h"
 #include <boost/cstdint.hpp>
+#include <vector>
 #include <string>
+#include <map>
 
 class TH1;
 
@@ -22,11 +25,8 @@ class SiStripOfflineClient {
   typedef std::vector<TH1*> Histos;
   typedef std::map< uint32_t, Histos > HistosMap;
   
-  SiStripOfflineClient( const std::string& filename,
-			const sistrip::SummaryHisto&,
-			const sistrip::SummaryType&,
-			const std::string& top_level_dir,
-			const sistrip::Granularity& );
+  SiStripOfflineClient( const std::string& root_file,
+			const std::string& xml_file );
   ~SiStripOfflineClient();
   
   /** Performs analysis on each commissioning histogram found in the
@@ -53,32 +53,23 @@ class SiStripOfflineClient {
 
  private: // ---------- member data ----------
   
-  /** Client (Input) file */
-  std::string filename_;
-  
-  sistrip::Task task_;
-  sistrip::View view_;
-
-  sistrip::SummaryHisto histo_;
-  sistrip::SummaryType type_;
-  
-  /** Top-level directory for summary histogram. */
-  std::string level_;
-
-  /** */
-  std::string path_;
-  
-  /** Granularity for summary histogram. */
-  sistrip::Granularity gran_;
-
-  /** Client (Input) file */
+  /** Client input file. */
   SiStripCommissioningFile* file_;
   
-  /** Run number */
+  /** */
+  sistrip::Task task_;
+
+  /** */
+  sistrip::View view_;
+    
+  /** Run number. */
   uint16_t run_;
   
   /** Map containing commissioning histograms. */
   HistosMap map_;
+  
+  /** */
+  std::vector<ConfigParser::SummaryPlot> plots_;
   
 };
 

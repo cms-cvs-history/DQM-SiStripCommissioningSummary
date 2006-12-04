@@ -16,6 +16,10 @@ CXXFLAGS := $(patsubst -O2,,$(CXXFLAGS))
 
 <library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
 
+<bin name=test_ConfigParser file=test_ConfigParser.cpp>
+<lib name=binDQMSiStripCommissioningSummary>
+</bin>
+
 <bin name=SiStripOfflineClient file=SiStripOfflineClient.cpp>
 <lib name=binDQMSiStripCommissioningSummary>
 </bin>

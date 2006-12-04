@@ -26,38 +26,29 @@ using namespace std;
 
 // -----------------------------------------------------------------------------
 //
-SiStripOfflineClient::SiStripOfflineClient( const string& filename,
-					    const sistrip::SummaryHisto& histo,
-					    const sistrip::SummaryType& type,
-					    const string& top_level_dir,
-					    const sistrip::Granularity& gran ) 
-  : filename_(filename),
+SiStripOfflineClient::SiStripOfflineClient( const string& root_file,
+					    const string& xml_file )
+  : file_(0),
     task_(sistrip::UNKNOWN_TASK),
     view_(sistrip::UNKNOWN_VIEW),
-    histo_(histo),
-    type_(type),
-    level_(top_level_dir),
-    path_(""),
-    gran_(gran),
-    file_(0),
     run_(0),
-    map_()
+    map_(),
+    plots_()
 {
 
   // Open client file
-  file_ = new SiStripCommissioningFile( filename_.c_str() );
+  file_ = new SiStripCommissioningFile( root_file.c_str() );
   task_ = file_->Task(); 
   view_ = file_->View(); 
-  path_ = "DQMData/SiStrip/" /*+ SiStripHistoNamingScheme::view( view_ ) + "/"*/ + level_;
-  cout << "In file: " << filename_ << endl
+  
+  cout << "In file: " << root_file << endl
        << " commissioning task: " << SiStripHistoNamingScheme::task( task_ ) << endl
-       << " logical view:       " << SiStripHistoNamingScheme::view( view_ ) << endl
-       << " directory path:     " << path_ << endl;
+       << " logical view:       " << SiStripHistoNamingScheme::view( view_ ) << endl;
   
   if ( !file_->queryDQMFormat() ) { 
     cout << "[" << __PRETTY_FUNCTION__ << "]"
 	 << " Error when reading file: " 
-	 << filename_ 
+	 << root_file 
 	 << endl;
   }
   if ( task_ == sistrip::UNKNOWN_TASK ) { 
@@ -73,7 +64,12 @@ SiStripOfflineClient::SiStripOfflineClient( const string& filename,
 	 << endl;
   }
 
-  map_.clear();
+  // Parse xml file
+  ConfigParser cfg;
+  cfg.parseXML(xml_file);
+  plots_ = cfg.summaryPlots(task_);
+  
+  // Do analysis
   setRunNumber();
   analysis();
   
@@ -91,15 +87,15 @@ void SiStripOfflineClient::analysis() {
   
   // Fill map with commissioning histograms 
   fillHistoMap();
-
+  
   // Analyse map
-  if      ( task_ == sistrip::FED_CABLING ) { fedCabling(); }
-  if      ( task_ == sistrip::APV_TIMING )  { apvTiming(); }
-  else if ( task_ == sistrip::FED_TIMING )  { fedTiming(); }
-  else if ( task_ == sistrip::OPTO_SCAN )   { optoScan(); }
-  else if ( task_ == sistrip::VPSP_SCAN )   { vpspScan(); }
-  else if ( task_ == sistrip::PEDESTALS )   { pedestals(); }
-  else { cerr <<  "[" << __PRETTY_FUNCTION__ << "]"
+  if ( task_ == sistrip::FED_CABLING ) { fedCabling(); }
+  else if ( task_ == sistrip::APV_TIMING ) { apvTiming(); }
+  else if ( task_ == sistrip::FED_TIMING ) { fedTiming(); }
+  else if ( task_ == sistrip::OPTO_SCAN ) { optoScan(); }
+  else if ( task_ == sistrip::VPSP_SCAN ) { vpspScan(); }
+  else if ( task_ == sistrip::PEDESTALS ) { pedestals(); }
+  else { cerr <<  "[SiStripOfflineClient::" << __func__ << "]"
 	      << " Unknown task: " << task_ << endl; }
   
 }
@@ -112,7 +108,7 @@ void SiStripOfflineClient::fillHistoMap() {
   
   // Get histograms from client file
   file_->findHistos( file_->top(), &histos );
-  
+
   // Convert map (to use FEC key as index, rather than directory string)
   map< string, vector<TH1*> >::iterator iter = histos.begin();
   for ( ; iter != histos.end(); iter++ ) {
@@ -139,10 +135,10 @@ void SiStripOfflineClient::fillHistoMap() {
       } else if ( title.granularity_ == sistrip::LLD_CHAN ) {
 	channel = title.channel_;
       } else {
-	cerr << endl // edm::LogWarning(mlDqmClient_)
-	     << "[CommissioningHistograms::" << __func__ << "]"
-	     << " Unexpected histogram granularity: "
-	     << title.granularity_;
+ 	cerr << endl // edm::LogWarning(mlDqmClient_)
+ 	     << "[SiStripOfflineClient::" << __func__ << "]"
+ 	     << " Unexpected histogram granularity: "
+ 	     << SiStripHistoNamingScheme::granularity( title.granularity_ );
       }
       uint32_t key = SiStripFecKey::key( path.fecCrate_, 
 					 path.fecSlot_, 
@@ -150,14 +146,14 @@ void SiStripOfflineClient::fillHistoMap() {
 					 path.ccuAddr_, 
 					 path.ccuChan_,
 					 channel );
+
       map_[key].push_back(*ihis);
-      //cout << "Key: 0x" << hex << setw(8) << setfill('0') << key << dec
-      //<< "  Histo: " << (*ihis)->GetName() << endl;
+      
     }
   }
 
   if ( map_.empty() ) {
-    cerr << "[" << __PRETTY_FUNCTION__ << "]"
+    cerr << "[SiStripOfflineClient::" << __func__ << "]"
 	 << " Zero histograms found!" << endl;
   }
   
@@ -177,17 +173,28 @@ void SiStripOfflineClient::fedCabling() {
     anal.print( ss ); 
     cout << ss.str() << endl;
   }
-  
-  SummaryHistogramFactory<FedCablingAnalysis> factory;
-  factory.init( histo_, type_, view_, level_, gran_ );
-  uint32_t xbins = factory.extract( monitorables );
-  TH1* summary = SummaryGenerator::histogram( type_, xbins );
-  factory.fill( *summary );
-  
-  if ( file_ && summary ) { 
-    file_->addPath(path_)->cd();
-    summary->Write();
-    delete summary;
+
+  // Iterate though plots and create
+  vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
+  for ( ; iplot != plots_.end(); iplot++ ) {
+
+    SummaryHistogramFactory<FedCablingAnalysis> factory;
+    factory.init( iplot->mon_, 
+		  iplot->pres_, 
+		  iplot->view_, 
+		  iplot->level_, 
+		  iplot->gran_ );
+    uint32_t xbins = factory.extract( monitorables );
+    TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
+    factory.fill( *summary );
+    
+    if ( file_ && summary ) { 
+      file_->sistripTop()->cd();
+      file_->addPath(iplot->level_)->cd();
+      summary->Write();
+      delete summary;
+    }
+
   }
 
 }
@@ -269,16 +276,28 @@ void SiStripOfflineClient::apvTiming() {
     ianal->second.print( ss ); 
     cout << ss.str() << endl;
   }
-  
-  SummaryHistogramFactory<ApvTimingAnalysis> factory;
-  factory.init( histo_, type_, view_, level_, gran_ );
-  uint32_t xbins = factory.extract( monitorables );
-  TH1* summary = SummaryGenerator::histogram( type_, xbins );
-  factory.fill( *summary );
-  if ( file_ && summary ) { 
-    file_->addPath(path_)->cd();
-    summary->Write();
-    delete summary;
+
+  // Iterate though plots and create
+  vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
+  for ( ; iplot != plots_.end(); iplot++ ) {
+    
+    SummaryHistogramFactory<ApvTimingAnalysis> factory;
+    factory.init( iplot->mon_, 
+		  iplot->pres_, 
+		  iplot->view_, 
+		  iplot->level_, 
+		  iplot->gran_ );
+    uint32_t xbins = factory.extract( monitorables );
+    TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
+    factory.fill( *summary );
+    
+    if ( file_ && summary ) { 
+      file_->sistripTop()->cd();
+      file_->addPath(iplot->level_)->cd();
+      summary->Write();
+      delete summary;
+    }
+
   }
   
 }
@@ -298,18 +317,29 @@ void SiStripOfflineClient::fedTiming() {
     cout << ss.str() << endl;
   }
   
-  SummaryHistogramFactory<FedTimingAnalysis> factory;
-  factory.init( histo_, type_, view_, level_, gran_ );
-  uint32_t xbins = factory.extract( monitorables );
-  TH1* summary = SummaryGenerator::histogram( type_, xbins );
-  factory.fill( *summary );
-  
-  if ( file_ && summary ) { 
-    file_->addPath(path_)->cd();
-    summary->Write();
-    delete summary;
-  }
+  // Iterate though plots and create
+  vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
+  for ( ; iplot != plots_.end(); iplot++ ) {
+    
+    SummaryHistogramFactory<FedTimingAnalysis> factory;
+    factory.init( iplot->mon_, 
+		  iplot->pres_, 
+		  iplot->view_, 
+		  iplot->level_, 
+		  iplot->gran_ );
+    uint32_t xbins = factory.extract( monitorables );
+    TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
+    factory.fill( *summary );
+    
+    if ( file_ && summary ) { 
+      file_->sistripTop()->cd();
+      file_->addPath(iplot->level_)->cd();
+      summary->Write();
+      delete summary;
+    }
 
+  }
+    
 }
 
 //-----------------------------------------------------------------------------
@@ -327,16 +357,27 @@ void SiStripOfflineClient::optoScan() {
     cout << ss.str() << endl;
   }
   
-  SummaryHistogramFactory<OptoScanAnalysis> factory;
-  factory.init( histo_, type_, view_, level_, gran_ );
-  uint32_t xbins = factory.extract( monitorables );
-  TH1* summary = SummaryGenerator::histogram( type_, xbins );
-  factory.fill( *summary );
-  
-  if ( file_ && summary ) { 
-    file_->addPath(path_)->cd();
-    summary->Write();
-    delete summary;
+  // Iterate though plots and create
+  vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
+  for ( ; iplot != plots_.end(); iplot++ ) {
+
+    SummaryHistogramFactory<OptoScanAnalysis> factory;
+    factory.init( iplot->mon_, 
+		  iplot->pres_, 
+		  iplot->view_, 
+		  iplot->level_, 
+		  iplot->gran_ );
+    uint32_t xbins = factory.extract( monitorables );
+    TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
+    factory.fill( *summary );
+    
+    if ( file_ && summary ) { 
+      file_->sistripTop()->cd();
+      file_->addPath(iplot->level_)->cd();
+      summary->Write();
+      delete summary;
+    }
+
   }
   
 }
@@ -356,16 +397,27 @@ void SiStripOfflineClient::vpspScan() {
     cout << ss.str() << endl;
   }
   
-  SummaryHistogramFactory<VpspScanAnalysis> factory;
-  factory.init( histo_, type_, view_, level_, gran_ );
-  uint32_t xbins = factory.extract( monitorables );
-  TH1* summary = SummaryGenerator::histogram( type_, xbins );
-  factory.fill( *summary );
-  
-  if ( file_ && summary ) { 
-    file_->addPath(path_)->cd();
-    summary->Write();
-    delete summary;
+  // Iterate though plots and create
+  vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
+  for ( ; iplot != plots_.end(); iplot++ ) {
+
+    SummaryHistogramFactory<VpspScanAnalysis> factory;
+    factory.init( iplot->mon_, 
+		  iplot->pres_, 
+		  iplot->view_, 
+		  iplot->level_, 
+		  iplot->gran_ );
+    uint32_t xbins = factory.extract( monitorables );
+    TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
+    factory.fill( *summary );
+    
+    if ( file_ && summary ) { 
+      file_->sistripTop()->cd();
+      file_->addPath(iplot->level_)->cd();
+      summary->Write();
+      delete summary;
+    }
+
   }
   
 }
@@ -385,16 +437,27 @@ void SiStripOfflineClient::pedestals() {
     cout << ss.str() << endl;
   }
   
-  SummaryHistogramFactory<PedestalsAnalysis> factory;
-  factory.init( histo_, type_, view_, level_, gran_ );
-  uint32_t xbins = factory.extract( monitorables );
-  TH1* summary = SummaryGenerator::histogram( type_, xbins );
-  factory.fill( *summary );
+  // Iterate though plots and create
+  vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
+  for ( ; iplot != plots_.end(); iplot++ ) {
 
-  if ( file_ && summary ) { 
-    file_->addPath(path_)->cd();
-    summary->Write();
-    delete summary;
+    SummaryHistogramFactory<PedestalsAnalysis> factory;
+    factory.init( iplot->mon_, 
+		  iplot->pres_, 
+		  iplot->view_, 
+		  iplot->level_, 
+		  iplot->gran_ );
+    uint32_t xbins = factory.extract( monitorables );
+    TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
+    factory.fill( *summary );
+    
+    if ( file_ && summary ) { 
+      file_->sistripTop()->cd();
+      file_->addPath(iplot->level_)->cd();
+      summary->Write();
+      delete summary;
+    }
+
   }
 
 }

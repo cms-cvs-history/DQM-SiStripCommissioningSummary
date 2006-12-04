@@ -39,7 +39,7 @@ TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::
   if (view == sistrip::CONTROL) {
     stringstream ss("");
     ss << sistrip::dqmRoot_ << sistrip::dir_ << sistrip::root_ << sistrip::dir_ << sistrip::controlView_;
-    top_ = addPath(ss.str());
+    top_ = addPath( ss.str() );
     dqmTop_ = GetDirectory(sistrip::dqmRoot_.c_str());
     sistripTop_ = dqmTop_->GetDirectory(sistrip::root_.c_str());
     dqmFormat_ = true;
@@ -151,8 +151,15 @@ void SiStripCommissioningFile::addDevice(unsigned int key) {
 
 //-----------------------------------------------------------------------------
 
-TDirectory* SiStripCommissioningFile::addPath(const string& path) {
-
+TDirectory* SiStripCommissioningFile::addPath( const string& path ) {
+  
+//   string path = dir;
+//   string root = sistrip::dqmRoot_+"/"+sistrip::root_+"/";
+//   if ( path.find( root ) == string::npos ) {
+//     cerr << "Did not find \"" << root << "\" root in path: " << dir;
+//     path = root + dir;
+//   }
+  
   vector<string> directories; directories.reserve(10);
 
   //fill vector

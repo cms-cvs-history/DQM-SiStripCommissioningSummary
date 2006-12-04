@@ -1,82 +1,79 @@
-#ifndef ConfigParser_H
-#define ConfigParser_H
-
-
-/** \class ConfigParser
- * *
- *  Parses the xml configuration file for 
- *  the offline client
- * 
- *  $Date: 21/9/2006
- *  $Revision: 1.0
- *  \author Puneeth Kalavase
- */
+#ifndef DQM_SiStripCommissioningSummary_ConfigParser_H
+#define DQM_SiStripCommissioningSummary_ConfigParser_H
 
 #include "DQMServices/ClientConfig/interface/DQMParserBase.h"
 #include "DQMServices/ClientConfig/interface/ParserFunctions.h"
 #include "DataFormats/SiStripCommon/interface/SiStripEnumeratedTypes.h"
 #include "DataFormats/SiStripCommon/interface/SiStripConstants.h"
-
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <map>
 
-
+/** 
+ * \class ConfigParser
+ * Parses the xml configuration file for 
+ * the offline client
+ * 
+ * $Date: 21/9/2006
+ * $Revision: 1.0
+ * \author Puneeth Kalavase
+ */
 class ConfigParser : public DQMParserBase {
   
-public:
-  /** Default Constructor */
-  ConfigParser();
-  /** Destructor */
-  virtual ~ConfigParser();
+ public:
   
-  /** Struct to hold the information for each requested summary histogram */
-  struct SummaryInfo {
-  /** Default Constructor */
-    SummaryInfo();
-  /** Sets the data menmbers back to default */
-    void reset();
+  ConfigParser();
+  virtual ~ConfigParser() {;}
 
-    sistrip::SummaryHisto histogram;
-    sistrip::SummaryType type;
-    sistrip::Granularity granularity;
-    std::string level;
+  // ---------- Classes and consts ----------
+
+  /** Class to hold summary plot information */
+  class SummaryPlot {
+  public:
+    SummaryPlot();
+    void reset();
+    void print( std::stringstream& ) const;
+    void checkView();
+    sistrip::Monitorable mon_;
+    sistrip::Presentation pres_;
+    sistrip::View view_;
+    sistrip::Granularity gran_;
+    std::string level_;
   };
+
+  // RunType tags and attributes
+  static const std::string rootTag_;
+  static const std::string runTypeTag_;
+  static const std::string runTypeAttr_;
+
+  // SummaryPlot tags and attributes
+  static const std::string summaryPlotTag_;
+  static const std::string monitorableAttr_;
+  static const std::string presentationAttr_;
+  static const std::string viewAttr_;
+  static const std::string levelAttr_;
+  static const std::string granularityAttr_;
+  
+  // ---------- Public interface ----------
   
   /** Fill the map with the required tag/names and values */
-  void parseXML(std::string);
-
-  /** Fills the vector with client filenames */
-  void getFileNames(std::vector<std::string>&);
-
-  /** Returns the SummaryInfo for a given filename. the default settings are returned in the filename is not found in the map. */
-  std::vector<SummaryInfo> getSummaryInfo(std::string);
-
+  void parseXML( const std::string& xml_file );
+  
+  /** Returns SummaryPlot objects for given commissioning task. */
+  const std::vector<SummaryPlot>& summaryPlots( const sistrip::Task& );
+  
  private:
+  
   //the map which will hold the values
-  std::map<std::string, std::vector<SummaryInfo> > settings_map;
+  std::map< sistrip::Task, std::vector<SummaryPlot> > summaryPlotMap_;
   
 };
 
-//Default constructor
-ConfigParser::SummaryInfo::SummaryInfo() :
-  
-  histogram(sistrip::UNKNOWN_SUMMARY_HISTO),
-     type(sistrip::UNKNOWN_SUMMARY_TYPE),
-     granularity(sistrip::UNKNOWN_GRAN),
-     level("")
-{;}
+std::ostream& operator<< ( std::ostream&, const ConfigParser::SummaryPlot& );
 
-//Reset data members
-void ConfigParser::SummaryInfo::reset() {
-  histogram = sistrip::UNKNOWN_SUMMARY_HISTO;
-  type = sistrip::UNKNOWN_SUMMARY_TYPE;
-  granularity = sistrip::UNKNOWN_GRAN;
-  level = "";
-}
+#endif // DQM_SiStripCommissioningSummary_ConfigParser_H
 
-#endif
 
-  
     

@@ -25,22 +25,6 @@ using namespace std;
 */
 int main( int argc, char* argv[] ) {
 
-  // Define summary definition containers
-
-  vector<string> client_files;
-  vector<ConfigParser::SummaryInfo> info;
-  ConfigParser::SummaryInfo summaryInfo;
-  
-  // Read in config file if present
-
-  if ( argc > 1 ) { 
-    std::string cfg_file = cfg_file  = argv[1]; 
-    cout << "Reading config. file: " << cfg_file << endl;
-    client_files.clear();info.clear();
-
-    ConfigParser cfg_info;
-    cfg_info.parseXML(cfg_file);
-
   try { 
 
     string cfgFile_("DQM/SiStripCommon/data/MessageLoggerInstance.cfg");
@@ -66,9 +50,9 @@ int main( int argc, char* argv[] ) {
     in.open( filename.str().c_str() );
     if( !in ) {
       stringstream ss;
-      ss  << "[" << __PRETTY_FUNCTION__ << "]"
-	  << " File could not be opened at '" 
-	  << filename.str() << "'";
+      ss << "[SiStripOfflineClient]"
+	 << " File could not be opened at '" 
+	 << filename.str() << "'";
       cerr << ss.str() << endl;
       throw cms::Exception("FileNotFound") << ss.str();
     } else {
@@ -79,7 +63,7 @@ int main( int argc, char* argv[] ) {
 	config << data << "\n";
       }
       in.close();
-      cout << "[" << __PRETTY_FUNCTION__ << "]"
+      cout << "[SiStripOfflineClient]"
 	   << " Message Logger configuration read from '" 
 	   << filename.str() << "' file is: " << endl
 	   << config.str() << endl;
@@ -96,42 +80,47 @@ int main( int argc, char* argv[] ) {
     // Make the services available
     edm::ServiceRegistry::Operate operate(tempToken);
    
-    //Run offline client
-    cfg_info.getFileNames(client_files);
-    for (vector<string>::const_iterator ifile = client_files.begin(); ifile != client_files.end(); ifile++) {
-      info = cfg_info.getSummaryInfo(*ifile);
-      for (vector<ConfigParser::SummaryInfo>::const_iterator iinfo = info.begin(); iinfo != info.end(); iinfo++) {
-	cout << "SiStripOfflineClient:" << endl
-	     << " file:        " << *ifile << endl
-	     << " histo:       " << SiStripHistoNamingScheme::summaryHisto( iinfo->histogram ) << endl
-	     << " type:        " << SiStripHistoNamingScheme::summaryType( iinfo->type ) << endl
-	     << " granularity: " << SiStripHistoNamingScheme::granularity( iinfo->granularity ) << endl
-	     << " top-level:   " << iinfo->level << endl
-	     << endl;
-	SiStripOfflineClient client( *ifile, iinfo->histogram, iinfo->type, iinfo->level, iinfo->granularity );
-      }
-    }
+    // -------------------- Run offline client --------------------
+    
+    // Read in client (root) file xml config file
+    std::string root_file = "client.root";
+    std::string xml_file = "summary.xml";
+    if ( argc > 1 ) { 
+      root_file = argv[1]; 
+      cout << "Reading root file: " << root_file << endl;
+    } else if ( argc > 2 ) { 
+      root_file = argv[1]; 
+      cout << "Reading root file: " << root_file << endl;
+      xml_file = argv[2]; 
+      cout << "Reading xml file: " << xml_file << endl;
+    } else {
+      cout << "Reading \"client.root\" and \"summary.xml\" files!" << endl;
+    }     
+    
+    // Create offline client
+    SiStripOfflineClient client( root_file, xml_file );
+    
   }
-  
   catch ( cms::Exception& e ) {
-    cout << "cms::Exception caught\n"
+    cout << "[SiStripOfflineClient]"
+	 << " cms::Exception caught\n"
 	 << e.explainSelf();
   }
   catch ( seal::Error& e ) {
-    cout << "Exception caught\n"
+    cout << "[SiStripOfflineClient]"
+	 << " seal::Error caught\n"
 	 << e.explainSelf();
   }
   catch ( exception& e ) {
-    cout << "exception caught\n"
+    cout << "[SiStripOfflineClient]"
+	 << " std::exception caught\n"
 	 << e.what();
   }
   catch (...) {
-    cout << "Unknown exception caught";
+    cout << "[SiStripOfflineClient]"
+	 << " Unknown exception caught";
   }
-  }
-
-  else {cout << "Requires xml filename as argument" << endl;}
-
-  return 0;
   
+  return 0;
+
 }
