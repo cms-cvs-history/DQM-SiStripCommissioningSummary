@@ -209,34 +209,34 @@ void SiStripOfflineClient::apvTiming() {
   uint32_t device_min = sistrip::invalid_;
   uint32_t device_max = sistrip::invalid_;
 
-  map<uint32_t,ApvTimingAnalysis> monitorables;
+  map<uint32_t,ApvTimingAnalysis*> monitorables;
   HistosMap::const_iterator imap = map_.begin(); 
   for ( ; imap != map_.end(); imap++ ) {
-
+    
     // Perform histo analysis
-    ApvTimingAnalysis anal( imap->first );
-    anal.analysis( imap->second );
+    ApvTimingAnalysis* anal = new ApvTimingAnalysis( imap->first );
+    anal->analysis( imap->second );
     monitorables[imap->first] = anal;
 
     // Check tick height is valid
-    if ( anal.height() < 100. ) { 
+    if ( anal->height() < 100. ) { 
       cerr << "[" << __PRETTY_FUNCTION__ << "]"
-	   << " Tick mark height too small: " << anal.height() << endl;
+	   << " Tick mark height too small: " << anal->height() << endl;
       continue; 
     }
     
     // Check time of rising edge
-    if ( anal.time() > sistrip::maximum_ ) { continue; }
+    if ( anal->time() > sistrip::maximum_ ) { continue; }
     
     // Find maximum time
-    if ( anal.time() > time_max ) { 
-      time_max = anal.time(); 
+    if ( anal->time() > time_max ) { 
+      time_max = anal->time(); 
       device_max = imap->first;
     }
     
     // Find minimum time
-    if ( anal.time() < time_min ) { 
-      time_min = anal.time(); 
+    if ( anal->time() < time_min ) { 
+      time_min = anal->time(); 
       device_min = imap->first;
     }
 
@@ -269,11 +269,11 @@ void SiStripOfflineClient::apvTiming() {
   }
   
   // Set maximum time for all analysis objects
-  map<uint32_t,ApvTimingAnalysis>::iterator ianal = monitorables.begin();
+  map<uint32_t,ApvTimingAnalysis*>::iterator ianal = monitorables.begin();
   for ( ; ianal != monitorables.end(); ianal++ ) { 
-    ianal->second.maxTime( time_max ); 
+    ianal->second->maxTime( time_max ); 
     stringstream ss;
-    ianal->second.print( ss ); 
+    ianal->second->print( ss ); 
     cout << ss.str() << endl;
   }
 
@@ -281,13 +281,13 @@ void SiStripOfflineClient::apvTiming() {
   vector<ConfigParser::SummaryPlot>::const_iterator iplot = plots_.begin();
   for ( ; iplot != plots_.end(); iplot++ ) {
     
-    SummaryHistogramFactory<ApvTimingAnalysis> factory;
-    factory.init( iplot->mon_, 
-		  iplot->pres_, 
-		  iplot->view_, 
-		  iplot->level_, 
-		  iplot->gran_ );
-    uint32_t xbins = factory.extract( monitorables );
+    SummaryPlotFactory<ApvTimingAnalysis*> factory;
+    uint32_t xbins = factory.init( iplot->mon_, 
+				   iplot->pres_, 
+				   iplot->view_, 
+				   iplot->level_, 
+				   iplot->gran_,
+				   monitorables );
     TH1* summary = SummaryGenerator::histogram( iplot->pres_, xbins );
     factory.fill( *summary );
     
@@ -298,6 +298,11 @@ void SiStripOfflineClient::apvTiming() {
       delete summary;
     }
 
+  }
+  
+  map<uint32_t,ApvTimingAnalysis*>::iterator iter = monitorables.begin();
+  for ( ; iter != monitorables.end(); iter++ ) {
+    if ( iter->second ) { delete iter->second; }
   }
   
 }
