@@ -3,6 +3,7 @@
 <use name=FWCore/ServiceRegistry>
 <use name=FWCore/MessageLogger>
 <use name=FWCore/MessageService>
+<use name=FWCore/PluginManager>
 <use name=DataFormats/SiStripCommon>
 <use name=DQMServices/ClientConfig>
 <use name=DQM/SiStripCommissioningAnalysis>
