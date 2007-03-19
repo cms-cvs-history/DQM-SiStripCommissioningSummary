@@ -47,7 +47,7 @@ TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::
     //TNamed defining commissioning task
     stringstream task_label;
     stringstream task_title;
-    task_label << sistrip::commissioningTask_ << sistrip::sep_ << SiStripHistoNamingScheme::task(task_);
+    task_label << sistrip::taskId_ << sistrip::sep_ << SiStripHistoNamingScheme::task(task_);
     task_title << "s=" << SiStripHistoNamingScheme::task(task_);
     TNamed task_description(task_label.str().c_str(),task_title.str().c_str());
     sistripTop_->WriteTObject(&task_description);
@@ -81,7 +81,7 @@ TDirectory* SiStripCommissioningFile::readDQMFormat() {
         bool loop = true;
         while (loop) { 
           if (obj == keylist->Last()) {loop = false;}
-          if ( string(obj->GetName()).find(sistrip::commissioningTask_) != string::npos ) {
+          if ( string(obj->GetName()).find(sistrip::taskId_) != string::npos ) {
             task_ = SiStripHistoNamingScheme::task( string(obj->GetTitle()).substr(2,string::npos) );
 	    // 	    cout << " name: " << string(obj->GetName())
 	    // 		 << " title: " << string(obj->GetTitle()) 

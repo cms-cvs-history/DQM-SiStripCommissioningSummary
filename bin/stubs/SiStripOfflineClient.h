@@ -36,7 +36,7 @@ class SiStripOfflineClient {
  private: // ---------- private methods ----------
   
   /** Sets run number based on name of input root file. */
-  void setRunNumber() {;}
+  void setRunNumber() {;} //@@ TO BE IMPLEMENTED
   
   /** Fills map (containing commissioning histograms) using the
       contents of the root file (accessible using
@@ -52,14 +52,20 @@ class SiStripOfflineClient {
   void pedestals();
 
  private: // ---------- member data ----------
-  
+
+  /** Input .root file. */
+  std::string rootFile_;
+
+  /** Input .xml file. */
+  std::string xmlFile_;
+
   /** Client input file. */
   SiStripCommissioningFile* file_;
   
-  /** */
+  /** Commissioning task. */
   sistrip::Task task_;
 
-  /** */
+  /** Logical view. */
   sistrip::View view_;
     
   /** Run number. */
@@ -68,7 +74,7 @@ class SiStripOfflineClient {
   /** Map containing commissioning histograms. */
   HistosMap map_;
   
-  /** */
+  /** SummaryPlot objects. */
   std::vector<ConfigParser::SummaryPlot> plots_;
   
 };
