@@ -122,7 +122,7 @@ int main( int argc, char* argv[]) {
 
   try { 
 
-    string cfgFile_("DQM/SiStripCommon/data/MessageLoggerInstance.cfg");
+    string cfgFile_("DQM/SiStripCommon/data/MessageLogger.cfg");
 
     // Instantiate the plug-in manager
     edm::AssertHandler ah;

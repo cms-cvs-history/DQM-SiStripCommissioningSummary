@@ -12,9 +12,6 @@
 <use name=boost>
 <use name=root>
 
-<Flags CXXFLAGS="-O0 -g -DDEBUG">
-CXXFLAGS := $(patsubst -O2,,$(CXXFLAGS))
-
 <library name=binDQMSiStripCommissioningSummary file=stubs/*.cc></library>
 
 <bin name=test_ConfigParser file=test_ConfigParser.cpp>

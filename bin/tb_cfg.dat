@@ -7,7 +7,7 @@
  #TBMonitor root-file path
  ##########################
 
-TBFile=TBMonitor0030349_000.root
+TBFile=TBMonitor0500503_000.root
 
  ##########################
  #Client (output) root-file path
@@ -26,5 +26,5 @@ ClientFile=client.root
  ##ApvLatency
  ##########################
 
-CommissioningTask=Pedestals
+CommissioningTask=ApvTiming
 

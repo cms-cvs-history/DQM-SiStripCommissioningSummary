@@ -9,14 +9,13 @@
 #include "FWCore/ParameterSet/interface/MakeParameterSets.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "DataFormats/SiStripCommon/interface/SiStripConstants.h"
 #include <exception>
 #include <sstream>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-
-using namespace std;
 
 /** 
     @author : M.Wingham, R.Bainbridge
@@ -25,7 +24,12 @@ using namespace std;
 */
 int main( int argc, char* argv[] ) {
 
+  using namespace std;
+  using namespace sistrip;
+
   try { 
+
+    // -------------------- Instantiating MessageLogger service --------------------
 
     string cfgFile_("DQM/SiStripCommon/data/MessageLogger.cfg");
 
@@ -50,11 +54,10 @@ int main( int argc, char* argv[] ) {
     in.open( filename.str().c_str() );
     if( !in ) {
       stringstream ss;
-      ss << "[SiStripOfflineClient]"
+      ss << "[SiStripOfflineClient.cpp]"
 	 << " File could not be opened at '" 
 	 << filename.str() << "'";
       cerr << ss.str() << endl;
-      throw cms::Exception("FileNotFound") << ss.str();
     } else {
       //in >> config;
       while ( !in.eof() ) {
@@ -63,9 +66,9 @@ int main( int argc, char* argv[] ) {
 	config << data << "\n";
       }
       in.close();
-      cout << "[SiStripOfflineClient]"
+      cout << "[SiStripOfflineClient.cpp]"
 	   << " Message Logger configuration read from '" 
-	   << filename.str() << "' file is: " << endl
+	   << filename.str() << "' file: " << endl
 	   << config.str() << endl;
     }
     
@@ -82,42 +85,68 @@ int main( int argc, char* argv[] ) {
    
     // -------------------- Run offline client --------------------
     
-    // Read in client (root) file xml config file
-    std::string root_file = "client.root";
+    // Read in histogram root and xml config files
+    std::string root_file = "source.root";
     std::string xml_file = "summary.xml";
-    if ( argc > 1 ) { 
+    if ( argc == 2 ) { 
+      if ( string(argv[1]).find(".root") == string::npos ) { 
+	edm::LogError(mlDqmClient_)
+	  << "[SiStripOfflineClient.cpp]"
+	  << " Unexpected filename!"
+	  << " Filename should have extension \".root\"."
+	  << " Usage: SiStripOfflineClient <.root file> <.xml file>";
+	return 1;
+      }
       root_file = argv[1]; 
       cout << "Reading root file: " << root_file << endl;
-    } else if ( argc > 2 ) { 
+    } else if ( argc == 3 ) { 
+      if ( string(argv[1]).find(".root") == string::npos ) { 
+	edm::LogError(mlDqmClient_)
+	  << " Unexpected filename!"
+	  << " Filename should have extension \".root\"."
+	  << " Usage: SiStripOfflineClient <.root file> <.xml file>";
+	return 1;
+      }
       root_file = argv[1]; 
       cout << "Reading root file: " << root_file << endl;
+      if ( string(argv[2]).find(".xml") == string::npos ) { 
+	edm::LogError(mlDqmClient_)
+	  << "[SiStripOfflineClient.cpp]"
+	  << " Unexpected filename!"
+	  << " Filename should have extension \".xml\"."
+	  << " Usage: SiStripOfflineClient <.root file> <.xml file>";
+	return 1; 
+      }
       xml_file = argv[2]; 
       cout << "Reading xml file: " << xml_file << endl;
     } else {
-      cout << "Reading \"client.root\" and \"summary.xml\" files!" << endl;
-    }     
+      edm::LogError(mlDqmClient_)
+	<< "[SiStripOfflineClient.cpp]"
+	<< " Usage: SiStripOfflineClient <.root file> <.xml file>";
+      return 1;
+    }
     
     // Create offline client
     SiStripOfflineClient client( root_file, xml_file );
     
   }
   catch ( cms::Exception& e ) {
-    cout << "[SiStripOfflineClient]"
+    cout << "[SiStripOfflineClient.cpp]"
 	 << " cms::Exception caught\n"
 	 << e.explainSelf();
   }
   catch ( seal::Error& e ) {
-    cout << "[SiStripOfflineClient]"
+    cout << "[SiStripOfflineClient.cpp]"
 	 << " seal::Error caught\n"
 	 << e.explainSelf();
   }
   catch ( exception& e ) {
-    cout << "[SiStripOfflineClient]"
+    cout << "[SiStripOfflineClient.cpp]"
 	 << " std::exception caught\n"
 	 << e.what();
   }
   catch (...) {
-    cout << "[SiStripOfflineClient]"
+    cout << "[SiStripOfflineClient.cpp]"
 	 << " Unknown exception caught";
   }
   
