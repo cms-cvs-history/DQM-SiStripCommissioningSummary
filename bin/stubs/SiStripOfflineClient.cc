@@ -15,7 +15,8 @@
 #include "DQM/SiStripCommissioningSummary/interface/PedestalsSummaryFactory.h"
 // Misc
 #include "DQM/SiStripCommissioningSummary/interface/SummaryGenerator.h"
-#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DataFormats/SiStripCommon/interface/SiStripEnumsAndStrings.h"
+#include "DataFormats/SiStripCommon/interface/SiStripHistoTitle.h"
 #include "DataFormats/SiStripCommon/interface/SiStripFecKey.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include <iostream>
@@ -34,7 +35,7 @@ SiStripOfflineClient::SiStripOfflineClient( const string& root_file,
   : rootFile_(root_file),
     xmlFile_(xml_file),
     file_(0),
-    task_(sistrip::UNKNOWN_TASK),
+    runType_(sistrip::UNKNOWN_RUN_TYPE),
     view_(sistrip::UNKNOWN_VIEW),
     run_(0),
     map_(),
@@ -82,14 +83,14 @@ void SiStripOfflineClient::analysis() {
   
   // Open client file
   file_ = new SiStripCommissioningFile( rootFile_.c_str() );
-  task_ = file_->Task(); 
+  runType_ = file_->runType(); 
   view_ = file_->View(); 
 
   edm::LogVerbatim(mlDqmClient_)
     << "[SiStripOfflineClient::" << __func__ << "] Some information..." << "\n"
     << " Opened .root file:  " << rootFile_ << "\n"
-    << " Commissioning task: " << SiStripHistoNamingScheme::task( task_ ) << "\n"
-    << " Logical view:       " << SiStripHistoNamingScheme::view( view_ ) << "\n"
+    << " Commissioning runType: " << SiStripEnumsAndStrings::runType( runType_ ) << "\n"
+    << " Logical view:       " << SiStripEnumsAndStrings::view( view_ ) << "\n"
     << " Using XML file:     " << xmlFile_;
 
   // Some checks
@@ -101,12 +102,12 @@ void SiStripOfflineClient::analysis() {
     return;
   }
   
-  // Check task
-  if ( task_ == sistrip::UNKNOWN_TASK ) { 
+  // Check runType
+  if ( runType_ == sistrip::UNKNOWN_RUN_TYPE ) { 
     edm::LogError(mlDqmClient_)
       << "[SiStripOfflineClient::" << __func__ << "]"
-      << " Unknown commissioning task: " 
-      << SiStripHistoNamingScheme::task( task_ );
+      << " Unknown commissioning runType: " 
+      << SiStripEnumsAndStrings::runType( runType_ );
     return;
   }
 
@@ -115,7 +116,7 @@ void SiStripOfflineClient::analysis() {
     edm::LogError(mlDqmClient_)
       << "[SiStripOfflineClient::" << __func__ << "]"
       << " Unknown view: " 
-      << SiStripHistoNamingScheme::view( view_ );
+      << SiStripEnumsAndStrings::view( view_ );
     return;
   }
 
@@ -125,22 +126,22 @@ void SiStripOfflineClient::analysis() {
   // Parse xml file
   ConfigParser cfg;
   cfg.parseXML(xmlFile_);
-  plots_ = cfg.summaryPlots(task_);
+  plots_ = cfg.summaryPlots(runType_);
   
   // Fill map with commissioning histograms 
   fillHistoMap();
   
   // Analyse map
-  if ( task_ == sistrip::FED_CABLING ) { fedCabling(); }
-  else if ( task_ == sistrip::APV_TIMING ) { apvTiming(); }
-  else if ( task_ == sistrip::FED_TIMING ) { fedTiming(); }
-  else if ( task_ == sistrip::OPTO_SCAN ) { optoScan(); }
-  else if ( task_ == sistrip::VPSP_SCAN ) { vpspScan(); }
-  else if ( task_ == sistrip::PEDESTALS ) { pedestals(); }
+  if ( runType_ == sistrip::FED_CABLING ) { fedCabling(); }
+  else if ( runType_ == sistrip::APV_TIMING ) { apvTiming(); }
+  else if ( runType_ == sistrip::FED_TIMING ) { fedTiming(); }
+  else if ( runType_ == sistrip::OPTO_SCAN ) { optoScan(); }
+  else if ( runType_ == sistrip::VPSP_SCAN ) { vpspScan(); }
+  else if ( runType_ == sistrip::PEDESTALS ) { pedestals(); }
   else { 
     edm::LogError(mlDqmClient_)
       << "[SiStripOfflineClient::" << __func__ << "]"
-      << " Unable to analyze this task: " << task_ << "\n"; 
+      << " Unable to analyze this runType: " << runType_ << "\n"; 
   }
 
   edm::LogError(mlDqmClient_)
@@ -163,37 +164,36 @@ void SiStripOfflineClient::fillHistoMap() {
   for ( ; iter != histos.end(); iter++ ) {
     uint32_t index = iter->first.find( sistrip::controlView_ );
     string control = iter->first.substr( index );
-    SiStripFecKey::Path path = SiStripHistoNamingScheme::controlPath( control );
+    SiStripFecKey path( control );
     
-    if ( path.fecCrate_ == sistrip::invalid_ ||
-	 path.fecSlot_ == sistrip::invalid_ ||
-	 path.fecRing_ == sistrip::invalid_ ||
-	 path.ccuAddr_ == sistrip::invalid_ ||
-	 path.ccuChan_ == sistrip::invalid_ ) { continue; }
+    if ( path.fecCrate() == sistrip::invalid_ ||
+	 path.fecSlot() == sistrip::invalid_ ||
+	 path.fecRing() == sistrip::invalid_ ||
+	 path.ccuAddr() == sistrip::invalid_ ||
+	 path.ccuChan() == sistrip::invalid_ ) { continue; }
 	 
     vector<TH1*>::iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
       
-      static HistoTitle title;
-      title = SiStripHistoNamingScheme::histoTitle( (*ihis)->GetName() );
+      SiStripHistoTitle title( (*ihis)->GetName() );
       
       uint16_t channel = sistrip::invalid_;
-      if ( title.granularity_ == sistrip::APV ) {
-	channel = (title.channel_-32)/2;
-      } else if ( title.granularity_ == sistrip::LLD_CHAN ) {
-	channel = title.channel_;
+      if ( title.granularity() == sistrip::APV ) {
+	channel = (title.channel()-32)/2;
+      } else if ( title.granularity() == sistrip::LLD_CHAN ) {
+	channel = title.channel();
       } else {
 	edm::LogWarning(mlDqmClient_)
 	  << "[SiStripOfflineClient::" << __func__ << "]"
 	  << " Unexpected histogram granularity: "
-	  << SiStripHistoNamingScheme::granularity( title.granularity_ );
+	  << SiStripEnumsAndStrings::granularity( title.granularity() );
       }
-      uint32_t key = SiStripFecKey::key( path.fecCrate_, 
-					 path.fecSlot_, 
-					 path.fecRing_, 
-					 path.ccuAddr_, 
-					 path.ccuChan_,
-					 channel );
+      uint32_t key = SiStripFecKey( path.fecCrate(), 
+				    path.fecSlot(), 
+				    path.fecRing(), 
+				    path.ccuAddr(), 
+				    path.ccuChan(),
+				    channel ).key();
 
       map_[key].push_back(*ihis);
       
@@ -298,22 +298,22 @@ void SiStripOfflineClient::apvTiming() {
 	 << " Unable to set maximum time! Found unexpected value: "
 	 << time_max << "\n";
   } else {
-    SiStripFecKey::Path max = SiStripFecKey::path( device_max );
+    SiStripFecKey max( device_max );
     cout << " Device (FEC/slot/ring/CCU/module/channel) " 
-	 << max.fecCrate_ << "/" 
-	 << max.fecSlot_ << "/" 
-	 << max.fecRing_ << "/" 
-	 << max.ccuAddr_ << "/"
-	 << max.ccuChan_ << "/"
+	 << max.fecCrate() << "/" 
+	 << max.fecSlot() << "/" 
+	 << max.fecRing() << "/" 
+	 << max.ccuAddr() << "/"
+	 << max.ccuChan() << "/"
 	 << " has maximum delay (rising edge) [ns]:" << time_max << "\n";
     
-    SiStripFecKey::Path min = SiStripFecKey::path( device_min );
+    SiStripFecKey min( device_min );
     cout << " Device (FEC/slot/ring/CCU/module/channel): " 
-	 << min.fecCrate_ << "/" 
-	 << min.fecSlot_ << "/" 
-	 << min.fecRing_ << "/" 
-	 << min.ccuAddr_ << "/"
-	 << min.ccuChan_ << "/"
+	 << min.fecCrate() << "/" 
+	 << min.fecSlot() << "/" 
+	 << min.fecRing() << "/" 
+	 << min.ccuAddr() << "/"
+	 << min.ccuChan() << "/"
 	 << " has minimum delay (rising edge) [ns]:" << time_min << "\n";
   }
   

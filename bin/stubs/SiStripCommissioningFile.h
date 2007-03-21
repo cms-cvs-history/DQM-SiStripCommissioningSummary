@@ -1,7 +1,7 @@
 #ifndef DQM_SiStripCommissioningSummary_SiStripCommissioningFile_h
 #define DQM_SiStripCommissioningSummary_SiStripCommissioningFile_h
 
-#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DataFormats/SiStripCommon/interface/SiStripConstants.h" 
 #include "TDirectory.h"
 #include "TFile.h"
 #include "TH1.h"
@@ -40,13 +40,13 @@ class SiStripCommissioningFile : public TFile {
   // -------------------- Public interface --------------------
 
   /** Formats the commissioning file with the correct "top-level"
-      directory structure. Inserts string defining commissioning task
+      directory structure. Inserts string defining commissioning RunType
       in sistrip::root_ directory */
-  TDirectory* setDQMFormat( sistrip::Task, sistrip::View );
+  TDirectory* setDQMFormat( sistrip::RunType, sistrip::View );
 
   /** Checks file complies with DQM format requirements. If so,
       updates record directory "top-level" directory structure and of
-      readout view and commissioning task. */
+      readout view and commissioning RunType. */
   TDirectory* readDQMFormat();
 
   /** Checks to see if the file complies with DQM format
@@ -63,7 +63,7 @@ class SiStripCommissioningFile : public TFile {
   TDirectory* sistripTop();
 
   /** Get Method */
-  sistrip::Task& Task();
+  sistrip::RunType& runType();
 
   /** Get Method */
   sistrip::View& View();
@@ -82,8 +82,8 @@ class SiStripCommissioningFile : public TFile {
   void dirContent(TDirectory*, std::vector<TDirectory*>*, std::map< std::string, std::vector<TH1*> >*);
 
  private:
-  /** Commissioning task */
-  sistrip::Task task_;
+  /** Commissioning RunType */
+  sistrip::RunType runType_;
 
   /** Readout view */
   sistrip::View view_;

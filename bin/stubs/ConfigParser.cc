@@ -2,13 +2,13 @@
  *
  *  Implementation of ConfigParser
  *
- *  $Date: 2006/10/03 08:14:37 $
+ *  $Date: 2006/12/04 16:16:51 $
  *  Revision: 1.0
  *  \author Puneeth Kalavase
  */
 
 #include "DQM/SiStripCommissioningSummary/bin/stubs/ConfigParser.h"
-#include "DataFormats/SiStripCommon/interface/SiStripHistoNamingScheme.h"
+#include "DataFormats/SiStripCommon/interface/SiStripEnumsAndStrings.h"
 #include <stdexcept>
 #include <map>
 #include <vector>
@@ -62,18 +62,18 @@ void ConfigParser::SummaryPlot::reset() {
 // 
 void ConfigParser::SummaryPlot::print( stringstream& ss ) const {
   ss << "[ConfigParser::SummaryPlot::" << __func__ << "]" << endl
-     << " Monitorable:  " <<  SiStripHistoNamingScheme::monitorable(mon_) << endl
-     << " Presentation: " << SiStripHistoNamingScheme::presentation(pres_) << endl
-     << " View:         " << SiStripHistoNamingScheme::view(view_) << endl
+     << " Monitorable:  " <<  SiStripEnumsAndStrings::monitorable(mon_) << endl
+     << " Presentation: " << SiStripEnumsAndStrings::presentation(pres_) << endl
+     << " View:         " << SiStripEnumsAndStrings::view(view_) << endl
      << " TopLevelDir:  " << level_ << endl
-     << " Granularity:  " << SiStripHistoNamingScheme::granularity(gran_) << endl;
+     << " Granularity:  " << SiStripEnumsAndStrings::granularity(gran_) << endl;
 }
 
 // -----------------------------------------------------------------------------
 // 
 void ConfigParser::SummaryPlot::checkView() {
 
-  sistrip::View check = SiStripHistoNamingScheme::view( level_ );
+  sistrip::View check = SiStripEnumsAndStrings::view( level_ );
   
   if ( check != view_ ) {
     stringstream ss;
@@ -81,12 +81,12 @@ void ConfigParser::SummaryPlot::checkView() {
        << " Mismatch between level_ and view_ member data!";
     if ( check != sistrip::UNKNOWN_VIEW ) {
       ss << " Changing view_ from "
-	 << SiStripHistoNamingScheme::view( view_ )
+	 << SiStripEnumsAndStrings::view( view_ )
 	 << " to " 
-	 << SiStripHistoNamingScheme::view( check ); 
+	 << SiStripEnumsAndStrings::view( check ); 
       view_ = check;
     } else {
-      string temp = SiStripHistoNamingScheme::view( view_ ) + "/" + level_;
+      string temp = SiStripEnumsAndStrings::view( view_ ) + "/" + level_;
       ss << " Changing level_ from "
 	 << level_ 
 	 << " to " 
@@ -109,14 +109,14 @@ ostream& operator<< ( std::ostream& os, const ConfigParser::SummaryPlot& summary
 
 // -----------------------------------------------------------------------------
 //
-const vector<ConfigParser::SummaryPlot>& ConfigParser::summaryPlots( const sistrip::Task& task ) {
+const vector<ConfigParser::SummaryPlot>& ConfigParser::summaryPlots( const sistrip::RunType& run_type ) {
   
   if( summaryPlotMap_.empty() ) {
     cout << "You have not called the parseXML function,"
 	 << " or your XML file is erronious" << endl;
   }
-  if( summaryPlotMap_.find( task ) != summaryPlotMap_.end() ) {
-    return summaryPlotMap_[task];
+  if( summaryPlotMap_.find( run_type ) != summaryPlotMap_.end() ) {
+    return summaryPlotMap_[run_type];
   } else {
     static vector<SummaryPlot> blank;
     return blank;
@@ -192,7 +192,7 @@ void ConfigParser::parseXML( const string& f ) {
 			       XMLString::transcode(runTypeTag_.c_str()) ) ) {
 	  
 	  const XMLCh* attr = element->getAttribute( XMLString::transcode(runTypeAttr_.c_str()) );
-	  sistrip::Task task = SiStripHistoNamingScheme::task( XMLString::transcode(attr) );
+	  sistrip::RunType run_type = SiStripEnumsAndStrings::runType( XMLString::transcode(attr) );
 
 	  cout << "[ConfigParser::" << __func__ << "]"
 	       << " Found \"" << runTypeTag_ << "\" tag!" << endl
@@ -241,13 +241,13 @@ void ConfigParser::parseXML( const string& f ) {
 
 		// Update SummaryPlot object and push back into map
 		summary.reset();
-		summary.mon_ = SiStripHistoNamingScheme::monitorable( XMLString::transcode(mon) );
-		summary.pres_ = SiStripHistoNamingScheme::presentation( XMLString::transcode(pres) );
-		summary.view_ = SiStripHistoNamingScheme::view( XMLString::transcode(view) );
-		summary.gran_ = SiStripHistoNamingScheme::granularity( XMLString::transcode(gran) );
+		summary.mon_ = SiStripEnumsAndStrings::monitorable( XMLString::transcode(mon) );
+		summary.pres_ = SiStripEnumsAndStrings::presentation( XMLString::transcode(pres) );
+		summary.view_ = SiStripEnumsAndStrings::view( XMLString::transcode(view) );
+		summary.gran_ = SiStripEnumsAndStrings::granularity( XMLString::transcode(gran) );
 		summary.level_ = XMLString::transcode(level);
 		summary.checkView();
-		summaryPlotMap_[task].push_back(summary);
+		summaryPlotMap_[run_type].push_back(summary);
 		
 	      }
 	    }

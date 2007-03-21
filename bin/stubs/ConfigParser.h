@@ -3,7 +3,6 @@
 
 #include "DQMServices/ClientConfig/interface/DQMParserBase.h"
 #include "DQMServices/ClientConfig/interface/ParserFunctions.h"
-#include "DataFormats/SiStripCommon/interface/SiStripEnumeratedTypes.h"
 #include "DataFormats/SiStripCommon/interface/SiStripConstants.h"
 #include <iostream>
 #include <sstream>
@@ -64,12 +63,12 @@ class ConfigParser : public DQMParserBase {
   void parseXML( const std::string& xml_file );
   
   /** Returns SummaryPlot objects for given commissioning task. */
-  const std::vector<SummaryPlot>& summaryPlots( const sistrip::Task& );
+  const std::vector<SummaryPlot>& summaryPlots( const sistrip::RunType& );
   
  private:
   
   /** Container holding the SummaryPlot objects. */
-  std::map< sistrip::Task, std::vector<SummaryPlot> > summaryPlotMap_;
+  std::map< sistrip::RunType, std::vector<SummaryPlot> > summaryPlotMap_;
   
 };
 

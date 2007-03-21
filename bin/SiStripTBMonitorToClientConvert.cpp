@@ -7,6 +7,7 @@
 #include "FWCore/ParameterSet/interface/MakeParameterSets.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "DataFormats/SiStripCommon/interface/SiStripEnumsAndStrings.h"
 #include <exception>
 
 #include <boost/shared_ptr.hpp>
@@ -31,7 +32,7 @@ int main( int argc, char* argv[]) {
   std::string cfg_file = "convert_cfg.dat";
   std::string tbmonitor_file = "";
   std::string client_file = "";
-  sistrip::Task task = sistrip::UNKNOWN_TASK;
+  sistrip::RunType run_type = sistrip::UNKNOWN_RUN_TYPE;
 
  // Read in arguments to main
 
@@ -78,24 +79,24 @@ int main( int argc, char* argv[]) {
 	pos = data.find("CommissioningTask=",0);
 	if (pos != string::npos) {
 	  string commissioningtask = data.substr(pos+18);
-	  if (commissioningtask == sistrip::undefinedTask_) {
-	    task = sistrip::UNDEFINED_TASK;}
-	  else if (commissioningtask == sistrip::unknownTask_) {
-	    task = sistrip::UNKNOWN_TASK;}
+	  if (commissioningtask == sistrip::undefinedRunType_) {
+	    run_type = sistrip::UNDEFINED_RUN_TYPE;}
+	  else if (commissioningtask == sistrip::unknownRunType_) {
+	    run_type = sistrip::UNKNOWN_RUN_TYPE;}
 	  else if (commissioningtask == sistrip::fedCabling_) {
-	    task = sistrip::FED_CABLING;}
+	    run_type = sistrip::FED_CABLING;}
 	  else if (commissioningtask == sistrip::apvTiming_) {
-	    task = sistrip::APV_TIMING;}
+	    run_type = sistrip::APV_TIMING;}
 	  else if (commissioningtask == sistrip::fedTiming_) {
-	    task = sistrip::FED_TIMING;}
+	    run_type = sistrip::FED_TIMING;}
 	  else if (commissioningtask == sistrip::optoScan_) {
-	    task = sistrip::OPTO_SCAN;}
+	    run_type = sistrip::OPTO_SCAN;}
 	  else if (commissioningtask == sistrip::vpspScan_) {
-	    task = sistrip::VPSP_SCAN;}
+	    run_type = sistrip::VPSP_SCAN;}
 	  else if (commissioningtask == sistrip::pedestals_) {
-	    task = sistrip::PEDESTALS;}
+	    run_type = sistrip::PEDESTALS;}
 	  else if (commissioningtask == sistrip::apvLatency_) {
-	    task = sistrip::APV_LATENCY;}}
+	    run_type = sistrip::APV_LATENCY;}}
       }
       in.close();
     }
@@ -103,16 +104,16 @@ int main( int argc, char* argv[]) {
 
   if ( argc > 2 ) { tbmonitor_file  = argv[2]; }
   if ( argc > 3 ) { client_file =  argv[3]; }
-  if ( argc > 4 ) { task  = static_cast<sistrip::Task>( atoi( argv[4] ) ); }
+  if ( argc > 4 ) { run_type  = static_cast<sistrip::RunType>( atoi( argv[4] ) ); }
 
   std::cout << " SiStripTBMonitorToClientConvert:" << std::endl
 	    << " tbmonitor file:                 " << tbmonitor_file << std::endl
 	    << " client file:                    " << client_file << std::endl
-	    << " commissioning task:             " << SiStripHistoNamingScheme::task( task ) << std::endl
+	    << " commissioning task:             " << SiStripEnumsAndStrings::runType( run_type ) << std::endl
 	    << std::endl;
 
   // Convert
-  SiStripTBMonitorToClientConvert tbmonitor( tbmonitor_file, client_file, task );
+  SiStripTBMonitorToClientConvert tbmonitor( tbmonitor_file, client_file, run_type );
   if ( !tbmonitor.convert() ) {
     std::cout << "[main]: Error with TBMonitor conversions."
 	      << " TBMonitor file is either not-present or"

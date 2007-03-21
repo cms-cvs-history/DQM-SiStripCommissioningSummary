@@ -62,8 +62,8 @@ class SiStripOfflineClient {
   /** Client input file. */
   SiStripCommissioningFile* file_;
   
-  /** Commissioning task. */
-  sistrip::Task task_;
+  /** Commissioning runType. */
+  sistrip::RunType runType_;
 
   /** Logical view. */
   sistrip::View view_;

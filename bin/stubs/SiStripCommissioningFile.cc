@@ -1,5 +1,5 @@
 #include "DQM/SiStripCommissioningSummary/bin/stubs/SiStripCommissioningFile.h"
-#include "DataFormats/SiStripCommon/interface/SiStripConstants.h" 
+#include "DataFormats/SiStripCommon/interface/SiStripEnumsAndStrings.h"
 #include "DataFormats/SiStripCommon/interface/SiStripFecKey.h" 
 #include "TString.h"
 #include "TProfile.h"
@@ -15,7 +15,7 @@ SiStripCommissioningFile::SiStripCommissioningFile( const char* fname,
 						    const char* ftitle, 
 						    Int_t compress ) :
   TFile(fname,option,ftitle,compress),
-  task_(sistrip::UNKNOWN_TASK),
+  runType_(sistrip::UNKNOWN_RUN_TYPE),
   view_(sistrip::UNKNOWN_VIEW),
   top_(gDirectory),
   dqmTop_(0),
@@ -31,10 +31,11 @@ SiStripCommissioningFile::~SiStripCommissioningFile() {;}
 
 //-----------------------------------------------------------------------------
 
-TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::View view) {
+TDirectory* SiStripCommissioningFile::setDQMFormat( sistrip::RunType run_type, 
+						    sistrip::View view) {
 
   view_ = view;
-  task_ = task;
+  runType_ = run_type;
 
   if (view == sistrip::CONTROL) {
     stringstream ss("");
@@ -44,13 +45,13 @@ TDirectory* SiStripCommissioningFile::setDQMFormat(sistrip::Task task, sistrip::
     sistripTop_ = dqmTop_->GetDirectory(sistrip::root_.c_str());
     dqmFormat_ = true;
 
-    //TNamed defining commissioning task
-    stringstream task_label;
-    stringstream task_title;
-    task_label << sistrip::taskId_ << sistrip::sep_ << SiStripHistoNamingScheme::task(task_);
-    task_title << "s=" << SiStripHistoNamingScheme::task(task_);
-    TNamed task_description(task_label.str().c_str(),task_title.str().c_str());
-    sistripTop_->WriteTObject(&task_description);
+    //TNamed defining commissioning runType
+    stringstream run_type_label;
+    stringstream run_type_title;
+    run_type_label << sistrip::taskId_ << sistrip::sep_ << SiStripEnumsAndStrings::runType(runType_);
+    run_type_title << "s=" << SiStripEnumsAndStrings::runType(runType_);
+    TNamed run_type_description(run_type_label.str().c_str(),run_type_title.str().c_str());
+    sistripTop_->WriteTObject(&run_type_description);
   }
 
   else {cout << "[CommissioningFile::setDQMFormat]: Currently only implemented for Control View." << endl; return 0;}
@@ -72,7 +73,7 @@ TDirectory* SiStripCommissioningFile::readDQMFormat() {
   if (dqmTop_ && sistripTop_ && top_) {
     dqmFormat_ = true;}
   
-  // Search for commissioning task
+  // Search for commissioning run_type
   if (sistripTop_) {
     TList* keylist = sistripTop_->GetListOfKeys();
     if (keylist) {
@@ -82,10 +83,10 @@ TDirectory* SiStripCommissioningFile::readDQMFormat() {
         while (loop) { 
           if (obj == keylist->Last()) {loop = false;}
           if ( string(obj->GetName()).find(sistrip::taskId_) != string::npos ) {
-            task_ = SiStripHistoNamingScheme::task( string(obj->GetTitle()).substr(2,string::npos) );
+            runType_ = SiStripEnumsAndStrings::runType( string(obj->GetTitle()).substr(2,string::npos) );
 	    // 	    cout << " name: " << string(obj->GetName())
 	    // 		 << " title: " << string(obj->GetTitle()) 
-	    // 		 << " task: " << SiStripHistoNamingScheme::task( task_ )
+	    // 		 << " runType: " << SiStripEnumsAndStrings::runType( runType_ )
 	    // 		 << endl;
           }
           obj = keylist->After(obj);
@@ -125,8 +126,8 @@ TDirectory* SiStripCommissioningFile::sistripTop() {
 
 //-----------------------------------------------------------------------------
 
-sistrip::Task& SiStripCommissioningFile::Task() {
-  return task_;}
+sistrip::RunType& SiStripCommissioningFile::runType() {
+  return runType_;}
 
 //-----------------------------------------------------------------------------
 
@@ -138,9 +139,9 @@ sistrip::View& SiStripCommissioningFile::View() {
 void SiStripCommissioningFile::addDevice(unsigned int key) {
 
   if (view_ == sistrip::CONTROL) {
-    if (!dqmFormat_) setDQMFormat(sistrip::UNKNOWN_TASK, sistrip::CONTROL);
-    SiStripFecKey::Path control_path = SiStripFecKey::path(key);
-    string directory_path = SiStripHistoNamingScheme::controlPath(control_path);
+    if (!dqmFormat_) setDQMFormat(sistrip::UNKNOWN_RUN_TYPE, sistrip::CONTROL);
+    SiStripFecKey control_path(key);
+    string directory_path = control_path.path();
     cd(sistrip::dqmRoot_.c_str());
     addPath(directory_path);
   }

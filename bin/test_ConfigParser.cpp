@@ -9,6 +9,7 @@
 #include "FWCore/ParameterSet/interface/MakeParameterSets.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "DataFormats/SiStripCommon/interface/SiStripEnumsAndStrings.h"
 #include <exception>
 #include <sstream>
 #include <fstream>
@@ -41,15 +42,15 @@ int main( int argc, char* argv[] ) {
   ConfigParser cfg;
   cfg.parseXML(file);
   
-  // Iterate through tasks
+  // Iterate through RunTypes
   for ( uint32_t cntr = 0; cntr <= sistrip::invalid_; cntr++ ) {
-    sistrip::Task in = static_cast<sistrip::Task>(cntr);
-    string str = SiStripHistoNamingScheme::task(in);
-    sistrip::Task out = SiStripHistoNamingScheme::task(str);
-    if ( out != sistrip::UNKNOWN_TASK ) {
+    sistrip::RunType in = static_cast<sistrip::RunType>(cntr);
+    string str = SiStripEnumsAndStrings::runType(in);
+    sistrip::RunType out = SiStripEnumsAndStrings::runType(str);
+    if ( out != sistrip::UNKNOWN_RUN_TYPE ) {
       const vector<ConfigParser::SummaryPlot>& summaries = cfg.summaryPlots(out);
       if ( !summaries.empty() ) {
-	cout << "[test_ConfigParser] Retreiving SummaryPlots for task: " << str << endl;
+	cout << "[test_ConfigParser] Retreiving SummaryPlots for run_type: " << str << endl;
 	vector<ConfigParser::SummaryPlot>::const_iterator iter = summaries.begin();
 	for ( ; iter != summaries.end(); iter++ ) { cout << (*iter) << endl; }
       }
